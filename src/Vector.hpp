@@ -111,7 +111,7 @@ Vector<T,N> norm(const Vector<T,N>& v) {
     return v/v.mag();
 }
 template<class T,int N>
-Vector<T,N> dot(const Vector<T,N>& a,const Vector<T,N>& b) {
+T dot(const Vector<T,N>& a,const Vector<T,N>& b) {
     T ret = 0;
     for(int i=0;i<N;++i) {
         ret += a[i]*b[i];

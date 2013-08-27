@@ -5,11 +5,11 @@
 #include "Vertex.hpp"
 
 struct Chunk {
-    static constexpr int WIDTH  = 16,
+    static constexpr int WIDTH  = 32,
                          HEIGHT = 64;
 
     static constexpr int SEALEVEL   = 32,
-                         DIRTLAYERS =  3;
+                         DIRTLAYERS =  5;
     static constexpr Color3f ROCKCOLOR = {  0.7,  0.7, 0.7 },
                              DIRTCOLOR = { 0.59, 0.29,   0 };
 

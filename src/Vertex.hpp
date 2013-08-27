@@ -8,10 +8,11 @@
 struct Vertex {
     Vec3f loc = Vec3f::ZERO;
     Color3f color = BLACK;
+    Vec3f normal = Vec3f{{0,0,1}};
 
     Vertex() = default;
-    Vertex(Vec3f _loc,Color3f _color) :
-        loc(_loc),color(_color) {}
+    Vertex(Vec3f _loc,Color3f _color,Vec3f _normal) :
+        loc(_loc),color(_color),normal(_normal) {}
     Vertex(const Vertex&) = default;
 };
 

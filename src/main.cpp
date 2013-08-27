@@ -31,10 +31,33 @@ void initViewport(int width,int height) {
     glViewport(0,0,width,height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45,(height != 0) ? width/(float)height : 1,0.1,100);
+    gluPerspective(45,(height != 0) ? width/(float)height : 1,0.1,500);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
+
+void initGL() {
+    glClearColor(0,0.4,0.99,0);
+    glClearDepth(1);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glShadeModel(GL_SMOOTH);
+
+    glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT1);
+
+    Color4f ambient = {0.5,0.5,0.5,1},
+            diffuse = {1,1,1,1};
+    glLightfv(GL_LIGHT1,GL_AMBIENT,&ambient[0]);
+    glLightfv(GL_LIGHT1,GL_DIFFUSE,&diffuse[0]);
+    Vec4f lightLoc = {Chunk::WIDTH/2,Chunk::HEIGHT+5,Chunk::WIDTH/2,1};
+    glLightfv(GL_LIGHT1,GL_POSITION,&lightLoc[0]);
+
+    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+}
+
 float frand() {
     return rand()/(float)RAND_MAX;
 }
@@ -51,16 +74,13 @@ int main() {
     Chunk chunk;
     Chunk::generate(chunk);
 
-    glClearColor(0,0,0,0);
-    glClearDepth(1);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    initGL();
     initViewport(windowSize.x,windowSize.y);
-    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
     Camera camera;
-    camera.loc[1] = 40;
+    camera.loc = Vec3f{{8,40,-5}};
     camera.heading = 180;
+    camera.pitch = -30;
     std::cout << "Camera = {\n"
               << "  loc = " << camera.loc << "\n"
               << "  heading = " << camera.heading << "\n"
@@ -134,6 +154,8 @@ int main() {
 
             sf::Mouse::setPosition(windowCenter,window);
         }
+
+        //camera.setLighting();
 
         glLoadMatrixf(camera.matrix().values);
 
