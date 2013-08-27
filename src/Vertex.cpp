@@ -1,11 +1,11 @@
 #include "Vertex.hpp"
 
-void drawVertArrayGL(GLenum shape,const VertexArray& varr) {
+void drawVertArray(GLenum shape,const VertexArray& varr) {
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
 
-    glVertexPointer(3,GL_FLOAT,sizeof(Vertex),&varr[0].loc);
-    glColorPointer(3,GL_FLOAT,sizeof(Vertex),&varr[0].color);
+    glVertexPointer(3,GL_FLOAT,sizeof(Vertex),&varr[0].loc[0]);
+    glColorPointer(3,GL_FLOAT,sizeof(Vertex),&varr[0].color[0]);
 
     glDrawArrays(shape,0,varr.size());
 

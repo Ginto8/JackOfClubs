@@ -9,7 +9,7 @@ struct Block {
 
     Block() = default;
     Block(bool _filled,Color3f _color) :
-        filled{_filled},color{_color} {}
+        filled{_filled},color(_color) {}
     Block(const Block&) = default;
     Block& operator=(const Block&) = default;
 };

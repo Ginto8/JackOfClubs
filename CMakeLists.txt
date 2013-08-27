@@ -24,6 +24,7 @@ add_executable(${EXECUTABLE_NAME}
     src/main.cpp
     src/Camera.cpp
     src/Vertex.cpp
+    src/Chunk.cpp
 )
 add_custom_command(TARGET JackOfClubs
                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/data 
@@ -40,6 +41,7 @@ endif()
 target_link_libraries(
     ${EXECUTABLE_NAME}
     GL
+    GLU
 )
 
 # Install target
