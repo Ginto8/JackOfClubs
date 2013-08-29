@@ -1,7 +1,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
 #include "Camera.hpp"
-#include "Chunk.hpp"
+#include "World.hpp"
 
 #include <vector>
 #include <iostream>
@@ -11,21 +11,6 @@ const float FPS = 60;
 const float DT  = 1.0/FPS;
 const float WORLD_RADIUS = 200;
 const float CAM_SPEED = 30;
-
-template<class T,int N>
-std::ostream& operator<<(std::ostream& o,const Vector<T,N>& v) {
-    o << "Vec" << N << "{";
-    bool first = true;
-    for(auto x:v.values) {
-        if(!first) {
-            o << ",";
-        }
-        first = false;
-        o << x;
-    }
-    o << "}";
-    return o;
-}
 
 void initViewport(int width,int height) {
     glViewport(0,0,width,height);
@@ -71,14 +56,13 @@ int main() {
                               windowSize.y/2);
     int windowWidth  = windowSize.x,
         windowHeight = windowSize.y;
-    Chunk chunk;
-    Chunk::generate(chunk);
+    World world;
 
     initGL();
     initViewport(windowSize.x,windowSize.y);
 
     Camera camera;
-    camera.loc = Vec3f{{8,40,-5}};
+    camera.loc = Vec3f{{8,40,8}};
     camera.heading = 180;
     camera.pitch = -30;
     std::cout << "Camera = {\n"
@@ -151,20 +135,22 @@ int main() {
             mouseLoc -= mouseCenter;
             camera.heading += mouseLoc[0]/40.0;
             camera.pitch   += mouseLoc[1]/40.0;
+            camera.constrain();
 
             sf::Mouse::setPosition(windowCenter,window);
         }
 
-        //camera.setLighting();
+        world.setViewerLoc(camera.loc);
+
+        world.update(DT);
+
+        camera.setLighting();
 
         glLoadMatrixf(camera.matrix().values);
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-        VertexArray varr;
-
-        chunk.buildVertArray(varr);
-        drawVertArray(GL_QUADS,varr);
+        world.draw(camera.viewDirection());
 
         window.display();
     }

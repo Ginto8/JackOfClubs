@@ -7,6 +7,16 @@ Camera::Camera(Vec3f _loc,
      loc(_loc),heading{_heading},pitch{_pitch} {
     //glEnable(GL_LIGHT0);
 }
+
+void Camera::constrain() {
+    if(pitch > 90) {
+        pitch = 90;
+    }
+    if(pitch < -90) {
+        pitch = -90;
+    }
+}
+
 void Camera::translateRelative(const Vec3f& diff) {
     auto absDiff = Mat44f::rotation(-heading,0,1,0)*diff;
     loc += Vec3f({ absDiff[0],absDiff[1],absDiff[2] });

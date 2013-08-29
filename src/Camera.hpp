@@ -14,6 +14,7 @@ struct Camera {
            double _heading = 0,
            double _pitch = 0);
 
+    void constrain();
     void translateRelative(const Vec3f& diff);
     Vec3f viewDirection() const;
     Mat44f matrix() const;

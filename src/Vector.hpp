@@ -2,12 +2,23 @@
 #define VECTOR_HPP
 
 #include <cmath>
+#include <functional>
+#include <ostream>
 
 template<class T,int N>
 struct Vector {
     static const Vector ZERO;
 
     T values[N];
+
+    template<class U>
+    operator Vector<U,N>() const {
+        Vector<U,N> ret;
+        for(int i=0;i<N;++i) {
+            ret[i] = (U)values[i];
+        }
+        return ret;
+    }
 
     bool operator==(const Vector& v) const {
         for(int i=0;i<N;++i) {
@@ -131,6 +142,40 @@ Vec3<T> cross(const Vec3<T>& a,const Vec3<T>& b) {
     return { a[1]*b[2]-a[2]*b[1],
              a[2]*b[0]-a[0]*b[2],
              a[0]*b[1]-a[1]*b[0] };
+}
+
+namespace std {
+    template<class T,int N>
+    struct hash<Vector<T,N>> {
+        static size_t rotate(size_t x,int n) {
+            if(n == 0) {
+                return x;
+            }
+            return (x<<n | x>>(sizeof(x)*8-n));
+        }
+        size_t operator()(const Vector<T,N>& v) const {
+            size_t result = 0;
+            for(int i=0;i<N;++i) {
+                result ^= rotate(hash<T>()(v[i]),i);
+            }
+            return result;
+        }
+    };
+    template<class T,int N>
+    ostream& operator<<(ostream& o,const Vector<T,N>& v) {
+        o << "Vec" << N << "{";
+        bool first = true;
+        for(auto x:v.values) {
+            if(!first) {
+                o << ",";
+            }
+            first = false;
+            o << x;
+        }
+        o << "}";
+        return o;
+    }
+
 }
 
 using Vec2i = Vec2<int>;

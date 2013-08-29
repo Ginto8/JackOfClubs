@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cmath>
+#include <iostream>
 using namespace std;
 
 constexpr Color3f Chunk::ROCKCOLOR,
@@ -121,6 +122,8 @@ void Chunk::generate(Chunk& c) {
 }
 
 void Chunk::buildVertArray(VertexArray& varr) {
+    //std::cout << "Building chunk varr" << std::endl;
+    int vertCount = varr.size();
     for(int x=-1;x<=WIDTH;++x) {
         for(int z=-1;z<=WIDTH;++z) {
             for(int y=-1;y<=HEIGHT;++y) {
@@ -198,4 +201,5 @@ void Chunk::buildVertArray(VertexArray& varr) {
             }
         }
     }
+    //std::cout << varr.size()-vertCount << " verts" << std::endl;
 }

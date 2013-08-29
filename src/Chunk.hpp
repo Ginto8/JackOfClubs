@@ -5,7 +5,7 @@
 #include "Vertex.hpp"
 
 struct Chunk {
-    static constexpr int WIDTH  = 32,
+    static constexpr int WIDTH  = 16,
                          HEIGHT = 64;
 
     static constexpr int SEALEVEL   = 32,

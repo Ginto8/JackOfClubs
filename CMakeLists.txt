@@ -25,6 +25,7 @@ add_executable(${EXECUTABLE_NAME}
     src/Camera.cpp
     src/Vertex.cpp
     src/Chunk.cpp
+    src/World.cpp
 )
 add_custom_command(TARGET JackOfClubs
                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/data 
