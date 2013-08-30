@@ -11,9 +11,9 @@
 class World {
 public:
     static constexpr int WIDTH = 512/Chunk::WIDTH,
-                         LOADED_REGION_WIDTH = 8;
+                         LOADED_REGION_WIDTH = 12;
     static constexpr float CHUNK_LOADS_PER_SECOND = 8;
-    static constexpr float PERLINSCALE = 8;
+    static constexpr float PERLINSCALE = 32;
     static constexpr int SEALEVEL   = 32,
                          DIRTLAYERS =  5;
     static constexpr Color3f ROCKCOLOR = {  0.7,  0.7, 0.7 },

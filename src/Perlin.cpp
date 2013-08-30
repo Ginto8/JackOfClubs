@@ -1,4 +1,7 @@
 #include "Perlin.hpp"
+#include <cmath>
+#include <cstdlib>
+using namespace std;
 
 double Perlin::_scurve(double t) {
     // f(t) = 6*t^5-15*t^4+10*t^3
@@ -10,7 +13,8 @@ Perlin::Perlin(int w,int h) {
     int n = w*h;
     _grads.reserve(n);
     for(int i=0;i<n;++i) {
-        _grads.push_back(norm(Vec2d{{(double)rand(),(double)rand()}}));
+        int angle = rand()%360;
+        _grads.push_back(Vec2d{{cos(angle*M_PI/180),sin(angle*M_PI/180)}});
     }
 }
 

@@ -6,8 +6,8 @@
 constexpr Color3f World::ROCKCOLOR,
                   World::DIRTCOLOR;
 
-World::World() : perlin(WIDTH*Chunk::WIDTH/PERLINSCALE,
-                        WIDTH*Chunk::WIDTH/PERLINSCALE) {
+World::World() : perlin(WIDTH*Chunk::WIDTH/PERLINSCALE+0.5,
+                        WIDTH*Chunk::WIDTH/PERLINSCALE+0.5) {
     for(int x=0;x<WIDTH;++x) {
         for(int z=0;z<WIDTH;++z) {
             _chunks.emplace_back(new Chunk);
@@ -21,17 +21,7 @@ World::World() : perlin(WIDTH*Chunk::WIDTH/PERLINSCALE,
 
 Vec2i World::_correctCoords(int x,int z) {
     int chunkX = x/Chunk::WIDTH,chunkZ = z/Chunk::WIDTH;
-    x -= chunkX*Chunk::WIDTH;
-    z -= chunkZ*Chunk::WIDTH;
-    chunkX %= WIDTH;
-    chunkZ %= WIDTH;
-    if(chunkX < 0) {
-        chunkX += WIDTH;
-    }
-    if(chunkZ < 0) {
-        chunkZ += WIDTH;
-    }
-    return {{chunkX,chunkZ}};
+    return {{(chunkX%WIDTH+WIDTH)%WIDTH,(chunkZ%WIDTH+WIDTH)%WIDTH}};
 }
 
 Chunk& World::_getChunk(int x,int z) {
@@ -64,8 +54,8 @@ void World::setBlock(int x,int y,int z,const Color3f& c) {
 
 const Block& World::getBlock(int x,int y,int z) const {
     Vec2i chunkLoc = _correctCoords(x,z);
-    x -= x/Chunk::WIDTH;
-    z -= z/Chunk::WIDTH;
+    x = (x%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
+    z = (z%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
     if(y < 0 || y >= Chunk::HEIGHT) {
         throw std::out_of_range("Invalid block y coordinate");
     }
@@ -211,10 +201,13 @@ void World::_buildChunkVarr(int chunkX,int chunkZ,VertexArray& varr) const {
                      validY = (y >= 0 && y < Chunk::HEIGHT),
                      validZ = (z >= 0 && z < Chunk::WIDTH);
                 if((validX && validY && validZ && c.blocks[x][z][y].filled) ||
-                   (validY && !validX && !validZ &&
+                   (validY && ((!validX && validZ) || (validX && !validZ)) &&
                               getBlock(chunkX*Chunk::WIDTH+x,
                                        y,
                                        chunkZ*Chunk::WIDTH+z).filled)) {
+                    if((x < 0 || z < 0) && y >= SEALEVEL) {
+                        //std::cout << Vec3i{{x,y,z}} << std::endl;
+                    }
                     continue;
                 }
                 float fx = x,fy = y,fz = z;
@@ -294,7 +287,7 @@ void World::_generateChunk(int chunkX,int chunkZ) {
     for(int x=0;x<Chunk::WIDTH;++x) {
         for(int z=0;z<Chunk::WIDTH;++z) {
             int height = SEALEVEL
-                         +32*(perlin.octaveNoise((chunkX+x)/PERLINSCALE,
+                         +16*(perlin.octaveNoise((chunkX+x)/PERLINSCALE,
                                                  (chunkZ+z)/PERLINSCALE,
                                                  2,2,3));
             for(int y=0;y<Chunk::HEIGHT;++y) {

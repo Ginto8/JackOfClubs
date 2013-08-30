@@ -126,6 +126,8 @@ int main() {
 
         camera.translateRelative(cameraDiff*CAM_SPEED*DT);
 
+        std::cout << camera.loc << std::endl;
+
         if(mouseCaptured) {
             sf::Vector2i mouseLoc2i = sf::Mouse::getPosition(window);
             Vec2i mouseCenter = { windowWidth/2,
