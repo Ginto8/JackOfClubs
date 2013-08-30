@@ -3,12 +3,16 @@
 #include <iostream>
 #include <cmath>
 
-World::World() {
-    for(int i=0;i<WIDTH*WIDTH;++i) {
-        _chunks.emplace_back(new Chunk);
-    }
-    for(auto chunk:_chunks) {
-        Chunk::generate(*chunk);
+constexpr Color3f World::ROCKCOLOR,
+                  World::DIRTCOLOR;
+
+World::World() : perlin(WIDTH*Chunk::WIDTH/PERLINSCALE,
+                        WIDTH*Chunk::WIDTH/PERLINSCALE) {
+    for(int x=0;x<WIDTH;++x) {
+        for(int z=0;z<WIDTH;++z) {
+            _chunks.emplace_back(new Chunk);
+            _generateChunk(x,z);
+        }
     }
     for(auto& chunk:_loadedChunks) {
         chunk.used = false;
@@ -60,8 +64,8 @@ void World::setBlock(int x,int y,int z,const Color3f& c) {
 
 const Block& World::getBlock(int x,int y,int z) const {
     Vec2i chunkLoc = _correctCoords(x,z);
-    x = (x%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
-    z = (z%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
+    x -= x/Chunk::WIDTH;
+    z -= z/Chunk::WIDTH;
     if(y < 0 || y >= Chunk::HEIGHT) {
         throw std::out_of_range("Invalid block y coordinate");
     }
@@ -190,9 +194,121 @@ bool World::_loadChunk(int x,int z) {
     }
     chunkSlot.used = true;
     chunkSlot.varr.clear();
-    _getChunk(chunkLoc[0],chunkLoc[1]).buildVertArray(chunkSlot.varr);
+    _buildChunkVarr(chunkLoc[0],chunkLoc[1],chunkSlot.varr);
     chunkSlot.loc = Vec3f{{(float)x,0,(float)z}};
     _chunkIndexByLoc[chunkLoc] = chunkIndex;
     return true;
+}
+
+void World::_buildChunkVarr(int chunkX,int chunkZ,VertexArray& varr) const {
+    auto& c = _getChunk(chunkX,chunkZ);
+    //std::cout << "Building chunk varr" << std::endl;
+    int vertCount = varr.size();
+    for(int x=-1;x<=Chunk::WIDTH;++x) {
+        for(int z=-1;z<=Chunk::WIDTH;++z) {
+            for(int y=-1;y<=Chunk::HEIGHT;++y) {
+                bool validX = (x >= 0 && x < Chunk::WIDTH),
+                     validY = (y >= 0 && y < Chunk::HEIGHT),
+                     validZ = (z >= 0 && z < Chunk::WIDTH);
+                if((validX && validY && validZ && c.blocks[x][z][y].filled) ||
+                   (validY && !validX && !validZ &&
+                              getBlock(chunkX*Chunk::WIDTH+x,
+                                       y,
+                                       chunkZ*Chunk::WIDTH+z).filled)) {
+                    continue;
+                }
+                float fx = x,fy = y,fz = z;
+                if(validY && validZ) {
+                    auto normal = Vec3f{{1,0,0}};
+                    if(x > 0 && c.blocks[x-1][z][y].filled) {
+                        auto color = c.blocks[x-1][z][y].color;
+                        varr.push_back({{fx,fy,  fz},
+                                        color,normal});
+                        varr.push_back({{fx,fy+1,fz},
+                                        color,normal});
+                        varr.push_back({{fx,fy+1,fz+1},
+                                        color,normal});
+                        varr.push_back({{fx,fy,  fz+1},
+                                        color,normal});
+                    }
+                    if(x < Chunk::WIDTH-1 && c.blocks[x+1][z][y].filled) {
+                        auto color = c.blocks[x+1][z][y].color;
+                        varr.push_back({{fx+1,fy,  fz},
+                                        color,-normal});
+                        varr.push_back({{fx+1,fy,  fz+1},
+                                        color,-normal});
+                        varr.push_back({{fx+1,fy+1,fz+1},
+                                        color,-normal});
+                        varr.push_back({{fx+1,fy+1,fz},
+                                        color,-normal});
+                    }
+                }
+                if(validX && validY) {
+                    auto normal = Vec3f{{0,0,1}};
+                    if(z > 0 && c.blocks[x][z-1][y].filled) {
+                        auto color = c.blocks[x][z-1][y].color;
+                        varr.push_back({{fx,  fy,  fz},color,normal});
+                        varr.push_back({{fx+1,fy,  fz},color,normal});
+                        varr.push_back({{fx+1,fy+1,fz},color,normal});
+                        varr.push_back({{fx,  fy+1,fz},color,normal});
+                    }
+                    if(z < Chunk::WIDTH-1 && c.blocks[x][z+1][y].filled) {
+                        auto color = c.blocks[x][z+1][y].color;
+                        varr.push_back({{fx,  fy,  fz+1},
+                                        color,-normal});
+                        varr.push_back({{fx,  fy+1,fz+1},
+                                        color,-normal});
+                        varr.push_back({{fx+1,fy+1,fz+1},
+                                        color,-normal});
+                        varr.push_back({{fx+1,fy,  fz+1},
+                                        color,-normal});
+                    }
+                }
+                if(validX && validZ) {
+                    auto normal = Vec3f{{0,1,0}};
+                    if(y > 0 && c.blocks[x][z][y-1].filled) {
+                        auto color = c.blocks[x][z][y-1].color;
+                        varr.push_back({{fx,  fy,fz},  color,normal});
+                        varr.push_back({{fx,  fy,fz+1},color,normal});
+                        varr.push_back({{fx+1,fy,fz+1},color,normal});
+                        varr.push_back({{fx+1,fy,fz},  color,normal});
+                    }
+                    if(y < Chunk::HEIGHT-1 && c.blocks[x][z][y+1].filled) {
+                        auto color = c.blocks[x][z][y+1].color;
+                        varr.push_back({{fx,  fy+1,fz},  color,-normal});
+                        varr.push_back({{fx+1,fy+1,fz},  color,-normal});
+                        varr.push_back({{fx+1,fy+1,fz+1},color,-normal});
+                        varr.push_back({{fx,  fy+1,fz+1},color,-normal});
+                    }
+                }
+            }
+        }
+    }
+    //std::cout << varr.size()-vertCount << " verts" << std::endl;
+}
+
+void World::_generateChunk(int chunkX,int chunkZ) {
+    Chunk& c = _getChunk(chunkX,chunkZ);
+    chunkX *= Chunk::WIDTH;
+    chunkZ *= Chunk::WIDTH;
+    for(int x=0;x<Chunk::WIDTH;++x) {
+        for(int z=0;z<Chunk::WIDTH;++z) {
+            int height = SEALEVEL
+                         +32*(perlin.octaveNoise((chunkX+x)/PERLINSCALE,
+                                                 (chunkZ+z)/PERLINSCALE,
+                                                 2,2,3));
+            for(int y=0;y<Chunk::HEIGHT;++y) {
+                Block& block = c.blocks[x][z][y];
+                if(y <= height) {
+                    block.filled = true;
+                    block.color = (height-y < DIRTLAYERS) ?
+                                                DIRTCOLOR :
+                                                ROCKCOLOR;
+                } else {
+                    block.filled = false;
+                }
+            }
+        }
+    }
 }
 

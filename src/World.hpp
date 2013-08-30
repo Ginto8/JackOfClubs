@@ -3,15 +3,21 @@
 
 #include "Chunk.hpp"
 #include "Vertex.hpp"
+#include "Perlin.hpp"
 #include <queue>
 #include <unordered_map>
 #include <memory>
 
 class World {
 public:
-    static constexpr int WIDTH = 256/Chunk::WIDTH,
+    static constexpr int WIDTH = 512/Chunk::WIDTH,
                          LOADED_REGION_WIDTH = 8;
     static constexpr float CHUNK_LOADS_PER_SECOND = 8;
+    static constexpr float PERLINSCALE = 8;
+    static constexpr int SEALEVEL   = 32,
+                         DIRTLAYERS =  5;
+    static constexpr Color3f ROCKCOLOR = {  0.7,  0.7, 0.7 },
+                             DIRTCOLOR = { 0.59, 0.29,   0 };
 
     World();
 
@@ -22,12 +28,16 @@ public:
     void setViewerLoc(Vec3f loc);
     void draw(Vec3f viewDir) const;
     void update(float dt);
+
 private:
     static Vec2i _correctCoords(int x,int z);
 
     bool _loadChunk(int x,int z);
     Chunk& _getChunk(int x,int z);
     const Chunk& _getChunk(int x,int z) const;
+
+    void _buildChunkVarr(int x,int z,VertexArray& varr) const;
+    void _generateChunk(int x,int z);
 
     struct _LoadedChunkSlot {
         VertexArray varr;
@@ -41,6 +51,7 @@ private:
     Vec3f _viewerLoc;
     float _timeSinceLoad = 0;
     std::vector<std::shared_ptr<Chunk>> _chunks;
+    Perlin perlin;
 };
 
 #endif
