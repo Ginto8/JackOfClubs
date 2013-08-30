@@ -20,8 +20,9 @@ World::World() : perlin(WIDTH*Chunk::WIDTH/PERLINSCALE+0.5,
 }
 
 Vec2i World::_correctCoords(int x,int z) {
-    int chunkX = x/Chunk::WIDTH,chunkZ = z/Chunk::WIDTH;
-    return {{(chunkX%WIDTH+WIDTH)%WIDTH,(chunkZ%WIDTH+WIDTH)%WIDTH}};
+    int width = WIDTH*Chunk::WIDTH;
+    return Vec2i{{((x%width+width)%width)/Chunk::WIDTH,
+                  ((z%width+width)%width)/Chunk::WIDTH}};
 }
 
 Chunk& World::_getChunk(int x,int z) {
@@ -193,18 +194,18 @@ bool World::_loadChunk(int x,int z) {
 void World::_buildChunkVarr(int chunkX,int chunkZ,VertexArray& varr) const {
     auto& c = _getChunk(chunkX,chunkZ);
     //std::cout << "Building chunk varr" << std::endl;
-    int vertCount = varr.size();
+    //int vertCount = varr.size();
     for(int x=-1;x<=Chunk::WIDTH;++x) {
         for(int z=-1;z<=Chunk::WIDTH;++z) {
             for(int y=-1;y<=Chunk::HEIGHT;++y) {
                 bool validX = (x >= 0 && x < Chunk::WIDTH),
                      validY = (y >= 0 && y < Chunk::HEIGHT),
                      validZ = (z >= 0 && z < Chunk::WIDTH);
-                if((validX && validY && validZ && c.blocks[x][z][y].filled) ||
-                   (validY && ((!validX && validZ) || (validX && !validZ)) &&
-                              getBlock(chunkX*Chunk::WIDTH+x,
-                                       y,
-                                       chunkZ*Chunk::WIDTH+z).filled)) {
+                //if((validX && validY && validZ && c.blocks[x][z][y].filled) ||
+                //   (validY && ((!validX && validZ) || (validX && !validZ)) &&
+                if(validY && getBlock(chunkX*Chunk::WIDTH+x,
+                                      y,
+                                      chunkZ*Chunk::WIDTH+z).filled) {
                     if((x < 0 || z < 0) && y >= SEALEVEL) {
                         //std::cout << Vec3i{{x,y,z}} << std::endl;
                     }

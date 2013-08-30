@@ -146,6 +146,8 @@ int main() {
 
         world.update(DT);
 
+        glEnable(GL_LIGHTING);
+
         camera.setLighting();
 
         glLoadMatrixf(camera.matrix().values);
@@ -153,6 +155,25 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
         world.draw(camera.viewDirection());
+
+        glDisable(GL_LIGHTING);
+        
+        glLoadIdentity();
+
+        glMatrixMode(GL_PROJECTION);
+
+        glPushMatrix();
+        glLoadIdentity();
+
+        glPointSize(2);
+        glBegin(GL_POINTS);
+            glColor3f(0,0,0);
+            glVertex3f(0,0,0);
+        glEnd();
+
+        glPopMatrix();
+
+        glMatrixMode(GL_MODELVIEW);
 
         window.display();
     }

@@ -52,9 +52,8 @@ struct Vector {
         return *this;
     }
     Vector& operator /=(T s) {
-        s = 1/s;
         for(int i=0;i<N;++i) {
-            values[i] *= s;
+            values[i] /= s;
         }
         return *this;
     }
@@ -71,7 +70,8 @@ struct Vector {
         return (ret *= s);
     }
     Vector operator/(T s) const {
-        return *this * (1/s);
+        auto ret = *this;
+        return (ret/=s);
     }
     Vector operator-() const {
         Vector ret;
