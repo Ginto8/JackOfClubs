@@ -156,6 +156,8 @@ int main() {
 
             sf::Mouse::setPosition(windowCenter,window);
         }
+        
+        std::cout << camera.loc << "\t" << camera.viewDirection() << std::endl;
 
         world.setViewerLoc(camera.loc);
         world.update(DT);

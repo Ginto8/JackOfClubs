@@ -75,45 +75,48 @@ T signum(T x) {
 
 // Traces viewDir out from _viewerLoc until either a filled block
 // is reached or the distance has reached maxDist.
-// Uses Bresenham's Line Algorithm generalized to 3D.
+// At each step, it traces forward to the next intersected cube face until
+// it hits a filled block.
 bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) {
-    if(viewDir.magSquared() < std::numeric_limits<float>::epsilon()) {
+    if(viewDir.magSquared() <= std::numeric_limits<float>::epsilon()) {
         return false;
     }
     Vec3i step;
+    Vec3i loc = _viewerLoc;
     for(int i=0;i<3;++i) {
         step[i] = signum(viewDir[i]);
-    }
-    int maxAxis;
-    for(int i=0;i<3;++i) {
-        if(i == 0 || std::abs(viewDir[i]) > std::abs(viewDir[maxAxis])) {
-            maxAxis = i;
+        if(step[i] < 0) {
+            loc[i]++;
         }
     }
-    int i0 = maxAxis,i1 = (maxAxis+1)%3,i2 = (maxAxis+2)%3;
-
-    Vec2f delta = Vec2f{{viewDir[i1],viewDir[i2]}}/viewDir[i0];
-    Vec2f err = {{0,0}};
-    Vec3i blockLoc = _viewerLoc;
-
-    while(((Vec3f)(blockLoc)-_viewerLoc).magSquared()<maxDist*maxDist) {
+    float factor = 0;
+    //std::cout << "Viewer Loc = " << _viewerLoc 
+    //          << " Dir = " << viewDir << std::endl;
+    do {
+        Vec3f currLoc = _viewerLoc+factor*viewDir;
+        float minFactor;
+        int minAxis;
+        for(int i=0;i<3;++i) {
+            float axisFactor = (loc[i]+step[i]-currLoc[i])/viewDir[i];
+            if(i == 0 || axisFactor < minFactor) {
+                minAxis = i;
+                minFactor = axisFactor;
+            }
+        }
+        factor += minFactor;
+        loc[minAxis] += step[minAxis];
+        Vec3i blockLoc = loc;
+        for(int i=0;i<3;++i) {
+            if(step[i] < 0) {
+                blockLoc[i]--;
+            }
+        }
         if(getBlock(blockLoc[0],blockLoc[1],blockLoc[2]).filled) {
             //deleteBlock(blockLoc[0],blockLoc[1],blockLoc[2]);
             out = blockLoc;
             return true;
         }
-        err += delta;
-        
-        if(err[0] >= 0.5) {
-            blockLoc[i1] += step[i1];
-            err[0] -= 1;
-        }
-        if(err[1] >= 0.5) {
-            blockLoc[i2] += step[i2];
-            err[1] -= 1;
-        }
-        blockLoc[i0] += step[i0];
-    }
+    } while(factor*factor*viewDir.magSquared() < maxDist*maxDist);
     return false;
 }
 
