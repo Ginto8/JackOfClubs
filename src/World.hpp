@@ -25,7 +25,8 @@ public:
     void deleteBlock(int x,int y,int z);
     void setBlock(int x,int y,int z,const Color3f& c);
     Block getBlock(int x,int y,int z) const;
-    bool selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist=REACH_DIST) const;
+    bool selectedBlock(Vec3i& out,Vec3i& faceOut,
+                       Vec3f viewDir,float maxDist=REACH_DIST) const;
 
     void setViewerLoc(Vec3f loc);
     void draw(Vec3f viewDir) const;
@@ -37,6 +38,7 @@ private:
     bool _loadChunk(int x,int z,bool changed = false);
     Chunk& _getChunk(int x,int z);
     const Chunk& _getChunk(int x,int z) const;
+    void _updateBlock(int x,int y,int z);
 
     void _buildChunkVarr(int x,int z,VertexArray& varr) const;
     void _generateChunk(int x,int z);

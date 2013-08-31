@@ -33,14 +33,31 @@ const Chunk& World::_getChunk(int x,int z) const {
     return *_chunks[x*WIDTH+z];
 }
 
+void World::_updateBlock(int x,int y,int z) {
+    Vec2i chunkLoc = _correctCoords(x,z);
+    auto fixedX = (x%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH,
+         fixedZ = (z%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
+    _chunksToUpdate.insert(chunkLoc);
+    if(fixedX == 0) {
+        _chunksToUpdate.insert(chunkLoc+Vec2i{{-1,0}});
+    } else if(fixedX == Chunk::WIDTH-1) {
+        _chunksToUpdate.insert(chunkLoc+Vec2i{{1,0}});
+    }
+    if(fixedZ == 0) {
+        _chunksToUpdate.insert(chunkLoc+Vec2i{{0,-1}});
+    } else if(fixedZ == Chunk::WIDTH-1) {
+        _chunksToUpdate.insert(chunkLoc+Vec2i{{0,1}});
+    }
+}
+
 void World::deleteBlock(int x,int y,int z) {
     Vec2i chunkLoc = _correctCoords(x,z);
-    x = (x%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
-    z = (z%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
+    auto fixedX = (x%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH,
+         fixedZ = (z%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
     if(y >= 0 && y < Chunk::HEIGHT) {
-        auto& b = _getChunk(chunkLoc[0],chunkLoc[1]).blocks[x][z][y];
+        auto& b = _getChunk(chunkLoc[0],chunkLoc[1]).blocks[fixedX][fixedZ][y];
         b.filled = false;
-        _chunksToUpdate.insert(chunkLoc);
+        _updateBlock(x,y,z);
     }
 }
 
@@ -77,7 +94,7 @@ T signum(T x) {
 // is reached or the distance has reached maxDist.
 // At each step, it traces forward to the next intersected cube face until
 // it hits a filled block.
-bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) const {
+bool World::selectedBlock(Vec3i& out,Vec3i& faceOut,Vec3f viewDir,float maxDist) const {
     if(viewDir.magSquared() <= std::numeric_limits<float>::epsilon()) {
         return false;
     }
@@ -112,6 +129,8 @@ bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) const {
         }
         if(getBlock(blockLoc[0],blockLoc[1],blockLoc[2]).filled) {
             out = blockLoc;
+            faceOut = {{0,0,0}};
+            faceOut[minAxis] = -step[minAxis];
             return true;
         }
     } while(factor*factor*viewDir.magSquared() < maxDist*maxDist);
