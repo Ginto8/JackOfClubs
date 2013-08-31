@@ -77,34 +77,33 @@ T signum(T x) {
 // is reached or the distance has reached maxDist.
 // At each step, it traces forward to the next intersected cube face until
 // it hits a filled block.
-bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) {
+bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) const {
     if(viewDir.magSquared() <= std::numeric_limits<float>::epsilon()) {
         return false;
     }
     Vec3i step;
-    Vec3i loc = _viewerLoc;
+    Vec3i loc;
     for(int i=0;i<3;++i) {
+        loc[i] = floor(_viewerLoc[i]);
         step[i] = signum(viewDir[i]);
         if(step[i] < 0) {
-            loc[i]++;
+            loc[i] ++;
         }
     }
     float factor = 0;
-    //std::cout << "Viewer Loc = " << _viewerLoc 
-    //          << " Dir = " << viewDir << std::endl;
     do {
         Vec3f currLoc = _viewerLoc+factor*viewDir;
         float minFactor;
-        int minAxis;
+        int minAxis = -1;
         for(int i=0;i<3;++i) {
             float axisFactor = (loc[i]+step[i]-currLoc[i])/viewDir[i];
-            if(i == 0 || axisFactor < minFactor) {
+            if(minAxis < 0 || axisFactor < minFactor) {
                 minAxis = i;
                 minFactor = axisFactor;
             }
         }
-        factor += minFactor;
         loc[minAxis] += step[minAxis];
+        factor = (loc[minAxis]-_viewerLoc[minAxis])/viewDir[minAxis];
         Vec3i blockLoc = loc;
         for(int i=0;i<3;++i) {
             if(step[i] < 0) {
@@ -112,7 +111,6 @@ bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) {
             }
         }
         if(getBlock(blockLoc[0],blockLoc[1],blockLoc[2]).filled) {
-            //deleteBlock(blockLoc[0],blockLoc[1],blockLoc[2]);
             out = blockLoc;
             return true;
         }

@@ -25,7 +25,7 @@ public:
     void deleteBlock(int x,int y,int z);
     void setBlock(int x,int y,int z,const Color3f& c);
     Block getBlock(int x,int y,int z) const;
-    bool selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist=REACH_DIST);
+    bool selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist=REACH_DIST) const;
 
     void setViewerLoc(Vec3f loc);
     void draw(Vec3f viewDir) const;
