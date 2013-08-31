@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
+#include <limits>
 
 constexpr Color3f World::ROCKCOLOR,
                   World::DIRTCOLOR;
@@ -39,6 +40,7 @@ void World::deleteBlock(int x,int y,int z) {
     if(y >= 0 && y < Chunk::HEIGHT) {
         auto& b = _getChunk(chunkLoc[0],chunkLoc[1]).blocks[x][z][y];
         b.filled = false;
+        _chunksToUpdate.insert(chunkLoc);
     }
 }
 
@@ -50,17 +52,69 @@ void World::setBlock(int x,int y,int z,const Color3f& c) {
         auto& b = _getChunk(chunkLoc[0],chunkLoc[1]).blocks[x][z][y];
         b.filled = true;
         b.color = c;
+        _chunksToUpdate.insert(chunkLoc);
     }
 }
 
-const Block& World::getBlock(int x,int y,int z) const {
+Block World::getBlock(int x,int y,int z) const {
     Vec2i chunkLoc = _correctCoords(x,z);
     x = (x%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
     z = (z%Chunk::WIDTH+Chunk::WIDTH)%Chunk::WIDTH;
     if(y < 0 || y >= Chunk::HEIGHT) {
-        throw std::out_of_range("Invalid block y coordinate");
+        return Block();
     }
     return _getChunk(chunkLoc[0],chunkLoc[1]).blocks[x][z][y];
+}
+
+template<class T>
+T signum(T x) {
+    return x > 0 ?  1 :
+           x < 0 ? -1 :
+                    0;
+}
+
+// Traces viewDir out from _viewerLoc until either a filled block
+// is reached or the distance has reached maxDist.
+// Uses Bresenham's Line Algorithm generalized to 3D.
+bool World::selectedBlock(Vec3i& out,Vec3f viewDir,float maxDist) {
+    if(viewDir.magSquared() < std::numeric_limits<float>::epsilon()) {
+        return false;
+    }
+    Vec3i step;
+    for(int i=0;i<3;++i) {
+        step[i] = signum(viewDir[i]);
+    }
+    int maxAxis;
+    for(int i=0;i<3;++i) {
+        if(i == 0 || std::abs(viewDir[i]) > std::abs(viewDir[maxAxis])) {
+            maxAxis = i;
+        }
+    }
+    int i0 = maxAxis,i1 = (maxAxis+1)%3,i2 = (maxAxis+2)%3;
+
+    Vec2f delta = Vec2f{{viewDir[i1],viewDir[i2]}}/viewDir[i0];
+    Vec2f err = {{0,0}};
+    Vec3i blockLoc = _viewerLoc;
+
+    while(((Vec3f)(blockLoc)-_viewerLoc).magSquared()<maxDist*maxDist) {
+        if(getBlock(blockLoc[0],blockLoc[1],blockLoc[2]).filled) {
+            //deleteBlock(blockLoc[0],blockLoc[1],blockLoc[2]);
+            out = blockLoc;
+            return true;
+        }
+        err += delta;
+        
+        if(err[0] >= 0.5) {
+            blockLoc[i1] += step[i1];
+            err[0] -= 1;
+        }
+        if(err[1] >= 0.5) {
+            blockLoc[i2] += step[i2];
+            err[1] -= 1;
+        }
+        blockLoc[i0] += step[i0];
+    }
+    return false;
 }
 
 void World::setViewerLoc(Vec3f loc) {
@@ -71,7 +125,7 @@ void World::setViewerLoc(Vec3f loc) {
         startZ = chunkZ-LOADED_REGION_WIDTH/2;
     for(int x = 0;x<LOADED_REGION_WIDTH;++x) {
         for(int z=0;z<LOADED_REGION_WIDTH;++z) {
-            _chunksToLoad.push({{startX+x,startZ+z}});
+            _chunksToLoad.insert({{startX+x,startZ+z}});
         }
     }
 }
@@ -111,16 +165,27 @@ void World::draw(Vec3f viewDir) const {
 void World::update(float dt) {
     _timeSinceLoad += dt;
     int numLoads = (int)(_timeSinceLoad*CHUNK_LOADS_PER_SECOND);
-    for(int i=0;i<numLoads && !_chunksToLoad.empty();++i) {
-        auto loc = _chunksToLoad.front();
-        _chunksToLoad.pop();
-        if(!_loadChunk(loc[0],loc[1])) {
+    for(int i=0;i<numLoads && !(_chunksToUpdate.empty() &&
+                                _chunksToLoad.empty());++i) {
+
+        Vec2i loc;
+        bool update = !_chunksToUpdate.empty();
+        if(update) {
+            auto j = _chunksToUpdate.begin();
+            loc = *j;
+            _chunksToUpdate.erase(j);
+        } else {
+            auto j = _chunksToLoad.begin();
+            loc = *j;
+            _chunksToLoad.erase(j);
+        }
+        if(!_loadChunk(loc[0],loc[1],update)) {
             i--;
         }
     }
 }
 
-bool World::_loadChunk(int x,int z) {
+bool World::_loadChunk(int x,int z,bool changed) {
     x *= Chunk::WIDTH;
     z *= Chunk::WIDTH;
     Vec2i chunkLoc = _correctCoords(x,z);
@@ -129,6 +194,11 @@ bool World::_loadChunk(int x,int z) {
         auto& chunk = _loadedChunks[i->second];
         chunk.used = true;
         chunk.loc = Vec3f{{(float)x,0,(float)z}};
+        if(changed) {
+            chunk.varr.clear();
+            _buildChunkVarr(chunkLoc[0],chunkLoc[1],chunk.varr);
+            return true;
+        }
         return false;
     }
     int viewerX = _viewerLoc[0]/Chunk::WIDTH,
@@ -142,7 +212,11 @@ bool World::_loadChunk(int x,int z) {
         if(loc == chunkLoc) {
             chunk.used = true;
             chunk.loc = Vec3f{{(float)x,0,(float)z}};
-            return false;
+            if(changed) {
+                chunk.varr.clear();
+                _buildChunkVarr(chunkLoc[0],chunkLoc[1],chunk.varr);
+            }
+            return true;
         }
         int loadStartX = viewerX-LOADED_REGION_WIDTH/2,
             loadStartZ = viewerZ-LOADED_REGION_WIDTH/2;

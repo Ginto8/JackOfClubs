@@ -51,6 +51,39 @@ int main() {
     initGL();
     initViewport(windowWidth,windowHeight,camera);
 
+    VertexArray cube;
+    {
+        cube.push_back({{{-0.004,-0.004,-0.004}},{{1,1,1}},{{0,0,-1}}});
+        cube.push_back({{{-0.004,1.004,-0.004}},{{1,1,1}},{{0,0,-1}}});
+        cube.push_back({{{1.004,1.004,-0.004}},{{1,1,1}},{{0,0,-1}}});
+        cube.push_back({{{1.004,-0.004,-0.004}},{{1,1,1}},{{0,0,-1}}});
+
+        cube.push_back({{{-0.004,-0.004,1.004}},{{1,1,1}},{{0,0,1}}});
+        cube.push_back({{{1.004,-0.004,1.004}},{{1,1,1}},{{0,0,1}}});
+        cube.push_back({{{1.004,1.004,1.004}},{{1,1,1}},{{0,0,1}}});
+        cube.push_back({{{-0.004,1.004,1.004}},{{1,1,1}},{{0,0,1}}});
+
+        cube.push_back({{{-0.004,-0.004,-0.004}},{{1,1,1}},{{-1,0,0}}});
+        cube.push_back({{{-0.004,-0.004,1.004}},{{1,1,1}},{{-1,0,0}}});
+        cube.push_back({{{-0.004,1.004,1.004}},{{1,1,1}},{{-1,0,0}}});
+        cube.push_back({{{-0.004,1.004,-0.004}},{{1,1,1}},{{-1,0,0}}});
+
+        cube.push_back({{{1.004,-0.004,-0.004}},{{1,1,1}},{{1,0,0}}});
+        cube.push_back({{{1.004,1.004,-0.004}},{{1,1,1}},{{1,-0.004,0}}});
+        cube.push_back({{{1.004,1.004,1.004}},{{1,1,1}},{{1,0,0}}});
+        cube.push_back({{{1.004,-0.004,1.004}},{{1,1,1}},{{1,0,0}}});
+
+        cube.push_back({{{-0.004,-0.004,-0.004}},{{1,1,1}},{{0,-1,0}}});
+        cube.push_back({{{1.004,-0.004,-0.004}},{{1,1,1}},{{0,-1,0}}});
+        cube.push_back({{{1.004,-0.004,1.004}},{{1,1,1}},{{0,-1,0}}});
+        cube.push_back({{{-0.004,-0.004,1.004}},{{1,1,1}},{{0,-1,0}}});
+
+        cube.push_back({{{-0.004,1.004,-0.004}},{{1,1,1}},{{0,1,0}}});
+        cube.push_back({{{-0.004,1.004,1.004}},{{1,1,1}},{{0,1,0}}});
+        cube.push_back({{{1.004,1.004,1.004}},{{1,1,1}},{{-0.004,1,0}}});
+        cube.push_back({{{1.004,1.004,-0.004}},{{1,1,1}},{{-0.004,1,0}}});
+    }
+
     camera.loc = Vec3f{{8,40,8}};
     camera.heading = 180;
     camera.pitch = -30;
@@ -130,9 +163,26 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
         camera.begin();
+        {
+            auto viewDir = camera.viewDirection();
+            world.draw(viewDir);
 
-        world.draw(camera.viewDirection());
+            Vec3i selected;
+            if(world.selectedBlock(selected,viewDir)) {
+                glTranslatef(selected[0],selected[1],selected[2]);
+                glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+                
+                drawVertArray(GL_QUADS,cube);
 
+                glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+            }
+            glColor3f(1,1,1);
+            Vec3f line[] = { camera.loc,camera.loc+viewDir };
+            glBegin(GL_LINE);
+                glVertex3f(line[0][0],line[0][1],line[0][2]);
+                glVertex3f(line[1][0],line[1][1],line[1][2]);
+            glEnd();
+        }
         camera.end();
 
         glMatrixMode(GL_PROJECTION);
