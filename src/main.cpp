@@ -12,13 +12,11 @@ const float DT  = 1.0/FPS;
 const float WORLD_RADIUS = 200;
 const float CAM_SPEED = 30;
 
-void initViewport(int width,int height) {
+void initViewport(int width,int height,Camera& camera) {
     glViewport(0,0,width,height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45,(height != 0) ? width/(float)height : 1,0.1,500);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    camera.aspectRatio = (height != 0) ? width/(float)height : 1;
 }
 
 void initGL() {
@@ -32,15 +30,6 @@ void initGL() {
     glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT1);
-
-    Color4f ambient = {0.5,0.5,0.5,1},
-            diffuse = {1,1,1,1};
-    glLightfv(GL_LIGHT1,GL_AMBIENT,&ambient[0]);
-    glLightfv(GL_LIGHT1,GL_DIFFUSE,&diffuse[0]);
-    Vec4f lightLoc = {Chunk::WIDTH/2,Chunk::HEIGHT+5,Chunk::WIDTH/2,1};
-    glLightfv(GL_LIGHT1,GL_POSITION,&lightLoc[0]);
-
-    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 }
 
 float frand() {
@@ -57,19 +46,14 @@ int main() {
     int windowWidth  = windowSize.x,
         windowHeight = windowSize.y;
     World world;
+    Camera camera;
 
     initGL();
-    initViewport(windowSize.x,windowSize.y);
+    initViewport(windowWidth,windowHeight,camera);
 
-    Camera camera;
     camera.loc = Vec3f{{8,40,8}};
     camera.heading = 180;
     camera.pitch = -30;
-    std::cout << "Camera = {\n"
-              << "  loc = " << camera.loc << "\n"
-              << "  heading = " << camera.heading << "\n"
-              << "  pitch = " << camera.pitch << "\n"
-              << "}" << std::endl;
 
     while(window.isOpen()) {
         sf::Event e;
@@ -84,7 +68,7 @@ int main() {
                 windowHeight = windowSize.y;
                 windowCenter.x = windowWidth/2;
                 windowCenter.y = windowHeight/2;
-                initViewport(windowWidth,windowHeight);
+                initViewport(windowWidth,windowHeight,camera);
                 break;
             case sf::Event::KeyPressed:
                 if(e.key.code == sf::Keyboard::Escape) {
@@ -126,8 +110,6 @@ int main() {
 
         camera.translateRelative(cameraDiff*CAM_SPEED*DT);
 
-        std::cout << camera.loc << std::endl;
-
         if(mouseCaptured) {
             sf::Vector2i mouseLoc2i = sf::Mouse::getPosition(window);
             Vec2i mouseCenter = { windowWidth/2,
@@ -143,33 +125,30 @@ int main() {
         }
 
         world.setViewerLoc(camera.loc);
-
         world.update(DT);
-
-        glEnable(GL_LIGHTING);
-
-        camera.setLighting();
-
-        glLoadMatrixf(camera.matrix().values);
-
+        
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+        camera.begin();
 
         world.draw(camera.viewDirection());
 
-        glDisable(GL_LIGHTING);
-        
-        glLoadIdentity();
+        camera.end();
 
         glMatrixMode(GL_PROJECTION);
 
         glPushMatrix();
         glLoadIdentity();
 
+        glMatrixMode(GL_MODELVIEW);
+
         glPointSize(2);
         glBegin(GL_POINTS);
             glColor3f(0,0,0);
             glVertex3f(0,0,0);
         glEnd();
+
+        glMatrixMode(GL_PROJECTION);
 
         glPopMatrix();
 
