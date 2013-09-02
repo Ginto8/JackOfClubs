@@ -32,9 +32,9 @@ void Camera::constrain() {
     }
 }
 
-void Camera::translateRelative(const Vec3f& diff) {
+Vec3f Camera::relativeTranslation(const Vec3f& diff) const {
     auto absDiff = Mat44f::rotation(-heading,0,1,0)*diff;
-    loc += Vec3f({ absDiff[0],absDiff[1],absDiff[2] });
+    return Vec3f({ absDiff[0],absDiff[1],absDiff[2] });
 }
 
 Vec3f Camera::viewDirection() const {

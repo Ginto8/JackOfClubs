@@ -5,6 +5,7 @@
 #include "Vertex.hpp"
 #include "Perlin.hpp"
 #include "AABB.hpp"
+#include "Maybe.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -21,14 +22,22 @@ public:
                              DIRTCOLOR = { 0.59, 0.29,   0 };
     static constexpr float REACH_DIST = 20;
 
+    struct BlockSelection {
+        Vec3i block,face;
+
+        BlockSelection(const BlockSelection&)=default;
+        BlockSelection(Vec3i _block,Vec3i _face) :
+            block(_block),face(_face) {}
+    };
+
     World();
 
     void deleteBlock(int x,int y,int z);
     void setBlock(int x,int y,int z,const Color3f& c);
     Block getBlock(int x,int y,int z) const;
-    bool selectedBlock(Vec3i& out,Vec3i& faceOut,
-                       Vec3f viewDir,float maxDist=REACH_DIST) const;
-    bool checkCollision(const AABB& entity,Vec3f* overlapOut = nullptr) const;
+    Maybe<BlockSelection> selectedBlock(Vec3f viewDir,
+                                        float maxDist=REACH_DIST) const;
+    Maybe<Collision> checkCollision(const AABB& entity) const;
 
     void setViewerLoc(Vec3f loc);
     void draw(Vec3f viewDir) const;

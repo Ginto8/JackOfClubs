@@ -1,14 +1,17 @@
 #include "AABB.hpp"
 
-bool AABB::checkCollision(const AABB& other,Vec3f* overlapOut) const {
+Maybe<Collision> AABB::checkCollision(const AABB& other) const {
     Vec3f overlap;
     for(int i=0;i<3;++i) {
-        float dist = center[i]-other.center[i];
-        float minDist = (other.size[i]+size[i])/2;
-        if(std::abs(dist) > minDist) {
-            return false;
+        float low       = center[i]-std::abs(size[i]/2),
+              high      = center[i]+std::abs(size[i]/2),
+              otherLow  = other.center[i]-std::abs(other.size[i]/2),
+              otherHigh = other.center[i]+std::abs(other.size[i]/2);
+        if(high <= otherLow || low >= otherHigh) {
+            return {};
         }
-        overlap[i] = dist-(dist > 0 ? minDist : -minDist);
+        float overlaps[] = { otherLow-high,otherHigh-low };
+        overlap[i] = overlaps[0] < overlaps[1] ? overlaps[0] : overlaps[1];
     }
     int minOverlap = 0;
     for(int i=1;i<3;++i) {
@@ -17,8 +20,5 @@ bool AABB::checkCollision(const AABB& other,Vec3f* overlapOut) const {
         }
     }
     overlap[(minOverlap+1)%3] = overlap[(minOverlap+2)%3] = 0;
-    if(overlapOut) {
-        *overlapOut = overlap;
-    }
-    return true;
+    return {{overlap}};
 }

@@ -12,10 +12,10 @@ struct Camera {
     Camera(Vec3f _loc = Vec3f::ZERO,
            double _heading = 0,double _pitch = 0,
            double _fovy = 45,double _aspectRatio = 1,
-           double _nearPlane = 0.1,double _farPlane = 500);
+           double _nearPlane = 0.01,double _farPlane = 500);
 
     void constrain();
-    void translateRelative(const Vec3f& diff);
+    Vec3f relativeTranslation(const Vec3f& diff) const;
     Vec3f viewDirection() const;
     Mat44f projection() const;
     Mat44f modelview() const;

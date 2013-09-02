@@ -12,6 +12,7 @@ const float DT  = 1.0/FPS;
 const float WORLD_RADIUS = 200;
 const float CAM_SPEED = 30;
 const float CLICKS_PER_SECOND = 4;
+const float MAX_RESOLUTION_SPEED = 10;
 
 void initViewport(int width,int height,Camera& camera) {
     glViewport(0,0,width,height);
@@ -77,8 +78,7 @@ int main() {
     World world;
     Camera camera;
 
-    bool blockSelected = false;
-    Vec3i selectedBlock,selectedFace;
+    Maybe<World::BlockSelection> blockSelection;
 
     DelayedRepeat leftMouse(1.0/CLICKS_PER_SECOND),
                   rightMouse(1.0/CLICKS_PER_SECOND);
@@ -158,26 +158,61 @@ int main() {
         }
 
         Vec3f cameraDiff{{0,0,0}};
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            cameraDiff[2] += -1;
+        
+        if(mouseCaptured) {
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+                cameraDiff[2] += -1;
+            }
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+                cameraDiff[2] += 1;
+            }
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+                cameraDiff[0] += -1;
+            }
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+                cameraDiff[0] += 1;
+            }
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+                cameraDiff[1] += -1;
+            }
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+                cameraDiff[1] += 1;
+            }
         }
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            cameraDiff[2] += 1;
+        
+        AABB camBB{camera.loc+Vec3f{{0,-0.5,0}},
+                   {{0.8,1,0.8}}};
+        auto collision = world.checkCollision(camBB);
+        if(collision) {
+            auto offset = collision.get().overlap;
+            auto maxMag = MAX_RESOLUTION_SPEED*DT;
+            if(offset.magSquared() > maxMag*maxMag) {
+                offset = maxMag*norm(offset);
+            }
+            camera.loc += offset;
+        } else {
+            auto translation = camera.relativeTranslation(cameraDiff*CAM_SPEED*DT);
+            do {
+                camBB.center = camera.loc+translation+Vec3f{{0,-0.5,0}};
+                collision = world.checkCollision(camBB);
+                if(collision) {
+                    auto overlap = collision.get().overlap;
+                    bool found = false;
+                    for(int i=0;i<3;++i) {
+                        if(translation[i] != 0 && overlap[i] != 0) {
+                            translation[i] = 0;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if(!found) {
+                        translation = {{0,0,0}};
+                        break;
+                    }
+                }
+            } while(collision);
+            camera.loc += translation;
         }
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            cameraDiff[0] += -1;
-        }
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            cameraDiff[0] += 1;
-        }
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-            cameraDiff[1] += -1;
-        }
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-            cameraDiff[1] += 1;
-        }
-
-        camera.translateRelative(cameraDiff*CAM_SPEED*DT);
 
         if(mouseCaptured) {
             sf::Vector2i mouseLoc2i = sf::Mouse::getPosition(window);
@@ -191,15 +226,17 @@ int main() {
             camera.constrain();
 
             sf::Mouse::setPosition(windowCenter,window);
-            if(blockSelected) {
+            if(blockSelection) {
                 bool left  = leftMouse.next(sf::Mouse::isButtonPressed(sf::Mouse::Left),DT),
                      right = rightMouse.next(sf::Mouse::isButtonPressed(sf::Mouse::Right),DT);
+                auto selected = blockSelection.get();
                 if(left) {
-                    world.deleteBlock(selectedBlock[0],
-                                      selectedBlock[1],
-                                      selectedBlock[2]);
+                    auto block = selected.block;
+                    world.deleteBlock(block[0],
+                                      block[1],
+                                      block[2]);
                 } else if(right) {
-                    auto placeLoc = selectedBlock+selectedFace;
+                    auto placeLoc = selected.block+selected.face;
                     if(placeLoc != Vec3i{{(int)std::floor(camera.loc[0]),
                                           (int)std::floor(camera.loc[1]),
                                           (int)std::floor(camera.loc[2])}} &&
@@ -223,7 +260,7 @@ int main() {
 
         world.setViewerLoc(camera.loc);
         world.update(DT);
-        blockSelected = world.selectedBlock(selectedBlock,selectedFace,viewDir);
+        blockSelection = world.selectedBlock(viewDir);
         
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -231,10 +268,11 @@ int main() {
         {
             world.draw(viewDir);
 
-            if(blockSelected) {
-                glTranslatef(selectedBlock[0],
-                             selectedBlock[1],
-                             selectedBlock[2]);
+            if(blockSelection) {
+                auto block = blockSelection.get().block;
+                glTranslatef(block[0],
+                             block[1],
+                             block[2]);
                 glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
                 
                 drawVertArray(GL_QUADS,cube);

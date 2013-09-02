@@ -94,9 +94,10 @@ T signum(T x) {
 // is reached or the distance has reached maxDist.
 // At each step, it traces forward to the next intersected cube face until
 // it hits a filled block.
-bool World::selectedBlock(Vec3i& out,Vec3i& faceOut,Vec3f viewDir,float maxDist) const {
+Maybe<World::BlockSelection> World::selectedBlock(Vec3f viewDir,
+                                                  float maxDist) const {
     if(viewDir.magSquared() <= std::numeric_limits<float>::epsilon()) {
-        return false;
+        return {};
     }
     Vec3i step;
     Vec3i loc;
@@ -128,17 +129,15 @@ bool World::selectedBlock(Vec3i& out,Vec3i& faceOut,Vec3f viewDir,float maxDist)
             }
         }
         if(getBlock(blockLoc[0],blockLoc[1],blockLoc[2]).filled) {
-            out = blockLoc;
-            faceOut = {{0,0,0}};
-            faceOut[minAxis] = -step[minAxis];
-            return true;
+            Vec3i face = {{0,0,0}};
+            face[minAxis] = -step[minAxis];
+            return {{blockLoc,face}};
         }
     } while(factor*factor*viewDir.magSquared() < maxDist*maxDist);
-    return false;
+    return {};
 }
 
-bool World::checkCollision(const AABB& entity,Vec3f* overlapOut) const {
-    Vec3f totalOverlap;
+Maybe<Collision> World::checkCollision(const AABB& entity) const {
     Vec3i minBlock,maxBlock;
     for(int i=0;i<3;++i) {
         int blocks[] = { (int)std::floor(entity.center[i]+entity.size[i]/2),
@@ -152,33 +151,29 @@ bool World::checkCollision(const AABB& entity,Vec3f* overlapOut) const {
         }
     }
 
+    Vec3f totalOverlap;
     bool collision = false;
     for(int x=minBlock[0];x<=maxBlock[0];++x) {
         for(int z=minBlock[2];z<=maxBlock[2];++z) {
-            for(int y=minBlock[1];y<=minBlock[1];++y) {
+            for(int y=minBlock[1];y<=maxBlock[1];++y) {
                 auto b = getBlock(x,y,z);
                 if(!b.filled) {
                     continue;
                 }
-                Vec3f overlap;
                 Vec3i loc = {{x,y,z}};
                 AABB block = { loc,{{1,1,1}} };
-                if(entity.checkCollision(block,&overlap)) {
-                    totalOverlap += overlap;
+                auto blockCollision = entity.checkCollision(block);
+                if(blockCollision) {
+                    totalOverlap += blockCollision.get().overlap;
                     collision = true;
                 }
             }
         }
     }
-
-    if(!collision) {
-        return false;
+    if(collision) {
+        return {{totalOverlap}};
     }
-
-    if(overlapOut) {
-        *overlapOut = totalOverlap;
-    }
-    return true;
+    return {};
 }
 
 void World::setViewerLoc(Vec3f loc) {
