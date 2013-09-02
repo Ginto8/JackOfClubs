@@ -137,6 +137,50 @@ bool World::selectedBlock(Vec3i& out,Vec3i& faceOut,Vec3f viewDir,float maxDist)
     return false;
 }
 
+bool World::checkCollision(const AABB& entity,Vec3f* overlapOut) const {
+    Vec3f totalOverlap;
+    Vec3i minBlock,maxBlock;
+    for(int i=0;i<3;++i) {
+        int blocks[] = { (int)std::floor(entity.center[i]+entity.size[i]/2),
+                         (int)std::floor(entity.center[i]-entity.size[i]/2) };
+        if(blocks[0] < blocks[1]) {
+            minBlock[i] = blocks[0];
+            maxBlock[i] = blocks[1];
+        } else {
+            minBlock[i] = blocks[1];
+            maxBlock[i] = blocks[0];
+        }
+    }
+
+    bool collision = false;
+    for(int x=minBlock[0];x<=maxBlock[0];++x) {
+        for(int z=minBlock[2];z<=maxBlock[2];++z) {
+            for(int y=minBlock[1];y<=minBlock[1];++y) {
+                auto b = getBlock(x,y,z);
+                if(!b.filled) {
+                    continue;
+                }
+                Vec3f overlap;
+                Vec3i loc = {{x,y,z}};
+                AABB block = { loc,{{1,1,1}} };
+                if(entity.checkCollision(block,&overlap)) {
+                    totalOverlap += overlap;
+                    collision = true;
+                }
+            }
+        }
+    }
+
+    if(!collision) {
+        return false;
+    }
+
+    if(overlapOut) {
+        *overlapOut = totalOverlap;
+    }
+    return true;
+}
+
 void World::setViewerLoc(Vec3f loc) {
     _viewerLoc = loc;
     int chunkX = loc[0]/Chunk::WIDTH,

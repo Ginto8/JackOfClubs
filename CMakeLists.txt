@@ -26,6 +26,7 @@ add_executable(${EXECUTABLE_NAME}
     src/Vertex.cpp
     src/World.cpp
     src/Perlin.cpp
+    src/AABB.cpp
 )
 add_custom_command(TARGET JackOfClubs
                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/data 

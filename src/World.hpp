@@ -4,6 +4,7 @@
 #include "Chunk.hpp"
 #include "Vertex.hpp"
 #include "Perlin.hpp"
+#include "AABB.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -27,6 +28,7 @@ public:
     Block getBlock(int x,int y,int z) const;
     bool selectedBlock(Vec3i& out,Vec3i& faceOut,
                        Vec3f viewDir,float maxDist=REACH_DIST) const;
+    bool checkCollision(const AABB& entity,Vec3f* overlapOut = nullptr) const;
 
     void setViewerLoc(Vec3f loc);
     void draw(Vec3f viewDir) const;
