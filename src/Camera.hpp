@@ -4,10 +4,10 @@
 #include "Mat44.hpp"
 
 struct Camera {
-    double fovy,aspectRatio;
-    double nearPlane,farPlane;
     Vec3f loc;
     double heading,pitch;
+    double fovy,aspectRatio;
+    double nearPlane,farPlane;
 
     Camera(Vec3f _loc = Vec3f::ZERO,
            double _heading = 0,double _pitch = 0,

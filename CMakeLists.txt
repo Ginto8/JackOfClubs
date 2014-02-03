@@ -5,7 +5,11 @@ project(JackOfClubs)
 if(CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
 endif()
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall ${CMAKE_CXX_FLAGS}")
+if(CMAKE_COMPILER_IS_GNUCXX)
+    SET(CMAKE_CXX_FLAGS "-std=c++0x -Wall -Werror ${CMAKE_CXX_FLAGS}")
+else()
+    set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror ${CMAKE_CXX_FLAGS}")
+endif()
 # (you can also set it on the command line: -D CMAKE_BUILD_TYPE=Release)
 
 # Set version information in a config.h file
@@ -56,3 +60,4 @@ install(TARGETS ${EXECUTABLE_NAME} DESTINATION bin)
 #set(CPACK_PACKAGE_VERSION_MAJOR "${JackOfClubs_VERSION_MAJOR}")
 #set(CPACK_PACKAGE_VERSION_MINOR "${JackOfClubs_VERSION_MINOR}")
 #include(CPack)
+

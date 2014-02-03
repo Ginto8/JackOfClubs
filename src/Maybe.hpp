@@ -17,17 +17,21 @@
     }
     // later...
     Maybe<T> val = f();
-    if(val && val.is()) { // equivalent boolean expressions
-        // these two are equivalent
-        T data = val;
-        T data2 = val.get();
-        // do stuff
-    } else {
-        // Each of these throws std::logic_error.
-        // Monad<T>'s data is only well-defined if val.is() == true
-        T data = val;
-        T data2 = val.get();
+    T x;
+    // these two have the same effect
+    if(val.extract(x)) {
+        // do stuff with x
     }
+    if(val) {
+        val.forward([&x](const T& v) {
+            x = v;
+        });
+        // do stuff with x
+    }
+    // Or if you don't have to use x afterwards:
+    val.forward([](const T& x) {
+        // do stuff with x
+    });
  */
 template<class T>
 class Maybe {
@@ -40,19 +44,21 @@ public:
     bool is() const {
         return (bool)_val;
     }
-    const T& get() const {
-        if(!_val) {
-            throw std::logic_error("Monad::get() requires "\
-                                   "Monad::is() == true");
+    bool extract(T& out) const {
+        if(_val) {
+            out = *_val;
+            return true;
         }
-        return *_val;
+        return false;
+    }
+    void forward(std::function<void(T)> f) const {
+        if(_val) {
+            f(*_val);
+        }
     }
 
     explicit operator bool() const {
         return is();
-    }
-    explicit operator T() const {
-        return get();
     }
 };
 

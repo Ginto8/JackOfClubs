@@ -197,10 +197,10 @@ using Color4 = Vec4<T>;
 using Color3f = Color3<float>;
 using Color4f = Color4<float>;
 
-constexpr Color3f RED   = { 1,0,0 };
-constexpr Color3f GREEN = { 0,1,0 };
-constexpr Color3f BLUE  = { 0,0,1 };
-constexpr Color3f BLACK = { 0,0,0 };
-constexpr Color3f WHITE = { 1,1,1 };
+constexpr Color3f RED   = {{ 1,0,0 }};
+constexpr Color3f GREEN = {{ 0,1,0 }};
+constexpr Color3f BLUE  = {{ 0,0,1 }};
+constexpr Color3f BLACK = {{ 0,0,0 }};
+constexpr Color3f WHITE = {{ 1,1,1 }};
 
 #endif

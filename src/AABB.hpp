@@ -7,6 +7,7 @@
 struct Collision {
     Vec3f overlap;
 
+    Collision() = default;
     Collision(const Collision& other) = default;
     Collision(Vec3f _overlap) : overlap(_overlap) {}
 };
@@ -17,7 +18,8 @@ struct AABB {
     AABB() = default;
     AABB(const AABB& other) = default;
     AABB(Vec3f _center,Vec3f _size) : center(_center),size(_size) {}
-    Maybe<Collision> checkCollision(const AABB& other) const;
+    Maybe<Collision> checkCollision(const AABB& other,
+                                    bool calcMinOverlap=true) const;
 };
 
 #endif

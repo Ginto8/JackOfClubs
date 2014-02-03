@@ -11,9 +11,9 @@ Camera::Camera(Vec3f _loc,
      nearPlane{_nearPlane},farPlane{_farPlane} {
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
-    Color4f ambient[] = {{0,0,0,1},{0.3,0.3,0.3,1}},
-            diffuse[] = {{1,1,1,1},{1,1,1,1}},
-            specular = {{0.3,0.3,0.3,0.3}};
+    Color4f ambient[] = {{{0,0,0,1}},{{0.3,0.3,0.3,1}}},
+            diffuse[] = {{{1,1,1,1}},{{1,1,1,1}}},
+            specular  = {{0.3,0.3,0.3,0.3}};
     glLightfv(GL_LIGHT0,GL_AMBIENT,&ambient[0][0]);
     glLightfv(GL_LIGHT0,GL_DIFFUSE,&diffuse[0][0]);
     glLightfv(GL_LIGHT0,GL_SPECULAR,&specular[0]);
@@ -34,14 +34,14 @@ void Camera::constrain() {
 
 Vec3f Camera::relativeTranslation(const Vec3f& diff) const {
     auto absDiff = Mat44f::rotation(-heading,0,1,0)*diff;
-    return Vec3f({ absDiff[0],absDiff[1],absDiff[2] });
+    return Vec3f{{ absDiff[0],absDiff[1],absDiff[2] }};
 }
 
 Vec3f Camera::viewDirection() const {
     auto v4 =  Mat44f::rotation(-heading, 0,1,0)
                *Mat44f::rotation(-pitch, -1,0,0)
-               *Vec3f({0,0,-1});
-    return Vec3f({v4[0],v4[1],v4[2]});
+               *Vec3f{{0,0,-1}};
+    return Vec3f{{v4[0],v4[1],v4[2]}};
 }
 
 Mat44f Camera::projection() const {
@@ -75,8 +75,8 @@ void Camera::end() const {
 }
 
 void Camera::_setLighting() const {
-    Vec4f lightLoc = {loc[0],loc[1],loc[2],1};
+    Vec4f lightLoc{{loc[0],loc[1],loc[2],1}};
     glLightfv(GL_LIGHT0,GL_POSITION,&lightLoc[0]);
-    Vec4f light2Loc = {Chunk::WIDTH/2,Chunk::HEIGHT,Chunk::WIDTH/2,1};
+    Vec4f light2Loc{{Chunk::WIDTH/2,Chunk::HEIGHT,Chunk::WIDTH/2,1}};
     glLightfv(GL_LIGHT1,GL_POSITION,&light2Loc[0]);
 }

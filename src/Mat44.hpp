@@ -117,7 +117,7 @@ Vec4<T> operator*(const Mat44<T>& A,const Vec4<T>& v) {
 
 template<class T>
 Vec4<T> operator*(const Mat44<T>& A,const Vec3<T>& v) {
-    return A*Vec4<T>({ v[0],v[1],v[2],1 });
+    return A*Vec4<T>{{ v[0],v[1],v[2],1 }};
 }
 
 template<class T>
@@ -135,10 +135,10 @@ template<class T>
 Mat44<T> Mat44<T>::translation(T x,T y,T z) {
     // column-major, so this looks like the transpose of what it
     // actually is.
-    return { 1,0,0,0,
-             0,1,0,0,
-             0,0,1,0,
-             x,y,z,1 };
+    return {{ 1,0,0,0,
+              0,1,0,0,
+              0,0,1,0,
+              x,y,z,1 }};
 }
 
 template<class T>
@@ -152,25 +152,25 @@ Mat44<T> Mat44<T>::rotation(T degAngle,
                             T x,T y,T z) {
     double radAngle = degAngle*M_PI/180;
     T s = std::sin(radAngle),c = std::cos(radAngle);
-    return { x*x*(1-c)+c,
-             x*y*(1-c)+z*s,
-             x*z*(1-c)-y*s,
-             0,
+    return {{ x*x*(1-c)+c,
+              x*y*(1-c)+z*s,
+              x*z*(1-c)-y*s,
+              0,
+ 
+              x*y*(1-c)-z*s,
+              y*y*(1-c)+c,
+              y*z*(1-c)+x*s,
+              0,
 
-             x*y*(1-c)-z*s,
-             y*y*(1-c)+c,
-             y*z*(1-c)+x*s,
-             0,
-
-             x*z*(1-c)+y*s,
-             y*z*(1-c)-x*s,
-             z*z*(1-c)+c,
-             0,
+              x*z*(1-c)+y*s,
+              y*z*(1-c)-x*s,
+              z*z*(1-c)+c,
+              0,
                      
-             0,
-             0,
-             0,
-             1 };
+              0,
+              0,
+              0,
+              1 }};
 }
 
 template<class T>
@@ -209,25 +209,25 @@ template<class T>
 Mat44<T> Mat44<T>::frustrumProjection(T left,  T right,
                                       T bottom,T top,
                                       T near,  T far) {
-    Mat44<T> ret = { 2*near/(right-left),
-                     0,
-                     0,
-                     0,
+    Mat44<T> ret{{ 2*near/(right-left),
+                   0,
+                   0,
+                   0,
 
-                     0,
-                     2*near/(top-bottom),
-                     0,
-                     0,
+                   0,
+                   2*near/(top-bottom),
+                   0,
+                   0,
 
-                     (right+left)/(right-left),
-                     (top+bottom)/(top-bottom),
-                     (near+far)/(near-far),
-                     -1,
-                     
-                     0,
-                     0,
-                     2*far*near/(near-far),
-                     0 };
+                   (right+left)/(right-left),
+                   (top+bottom)/(top-bottom),
+                   (near+far)/(near-far),
+                   -1,
+                   
+                   0,
+                   0,
+                   2*far*near/(near-far),
+                   0 }};
     return ret;
 }
 

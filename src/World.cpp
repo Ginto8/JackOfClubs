@@ -1,4 +1,5 @@
 #include "World.hpp"
+#include "NumUtil.hpp"
 #include <stdexcept>
 #include <iostream>
 #include <cmath>
@@ -83,13 +84,6 @@ Block World::getBlock(int x,int y,int z) const {
     return _getChunk(chunkLoc[0],chunkLoc[1]).blocks[x][z][y];
 }
 
-template<class T>
-T signum(T x) {
-    return x > 0 ?  1 :
-           x < 0 ? -1 :
-                    0;
-}
-
 // Traces viewDir out from _viewerLoc until either a filled block
 // is reached or the distance has reached maxDist.
 // At each step, it traces forward to the next intersected cube face until
@@ -138,9 +132,10 @@ Maybe<World::BlockSelection> World::selectedBlock(Vec3f viewDir,
 }
 
 Maybe<Collision> World::checkCollision(const AABB& entity) const {
+    std::cout << entity.center << "\t" << entity.size << std::endl;
     Vec3i minBlock,maxBlock;
     for(int i=0;i<3;++i) {
-        int blocks[] = { (int)std::floor(entity.center[i]+entity.size[i]/2),
+        int blocks[] = { (int)std::ceil(entity.center[i]+entity.size[i]/2),
                          (int)std::floor(entity.center[i]-entity.size[i]/2) };
         if(blocks[0] < blocks[1]) {
             minBlock[i] = blocks[0];
@@ -150,8 +145,16 @@ Maybe<Collision> World::checkCollision(const AABB& entity) const {
             maxBlock[i] = blocks[0];
         }
     }
+    std::cout << minBlock << "\t" << maxBlock << std::endl;
 
-    Vec3f totalOverlap;
+    std::vector<Vec3f> blockOverlaps;
+    Vec3i regionSize = maxBlock-minBlock+Vec3i{{1,1,1}};
+    blockOverlaps.reserve(regionSize[0]*regionSize[1]*regionSize[2]);
+    auto calcIndex = [minBlock,regionSize](int x,int y,int z) {
+        return (x-minBlock[0])*(regionSize[1]*regionSize[2])
+               +(z-minBlock[2])*regionSize[1]
+               +(y-minBlock[1]);
+    };
     bool collision = false;
     for(int x=minBlock[0];x<=maxBlock[0];++x) {
         for(int z=minBlock[2];z<=maxBlock[2];++z) {
@@ -160,16 +163,62 @@ Maybe<Collision> World::checkCollision(const AABB& entity) const {
                 if(!b.filled) {
                     continue;
                 }
-                Vec3i loc = {{x,y,z}};
+                Vec3f loc = {{x+0.5f,y+0.5f,z+0.5f}};
                 AABB block = { loc,{{1,1,1}} };
-                auto blockCollision = entity.checkCollision(block);
-                if(blockCollision) {
-                    totalOverlap += blockCollision.get().overlap;
+                auto blockCollision = entity.checkCollision(block,false);
+                Collision c;
+                if(blockCollision.extract(c)) {
+                    auto blockOverlap = c.overlap;
+                    blockOverlaps.push_back(blockOverlap);
                     collision = true;
+                } else {
+                    blockOverlaps.push_back({{0,0,0}});
                 }
             }
         }
     }
+    for(int x=minBlock[0];x<=maxBlock[0];++x) {
+        for(int z=minBlock[2];z<=maxBlock[2];++z) {
+            for(int y=minBlock[1];y<=maxBlock[1];++y) {
+                Vec3i loc = {{x,y,z}};
+                auto& overlap = blockOverlaps[calcIndex(x,y,z)];
+                for(int i=0;i<3;++i) {
+                    int dir = signum(overlap[i]);
+                    auto otherLoc = loc;
+                    otherLoc[i] += dir;
+                    if(otherLoc[i] < minBlock[i] ||
+                       otherLoc[i] > maxBlock[i]) {
+                        continue;
+                    }
+                    auto& otherOverlap = blockOverlaps[calcIndex(otherLoc[0],
+                                                                 otherLoc[1],
+                                                                 otherLoc[2])];
+                    if(dir != 0 && signum(otherOverlap[i]) == -dir) {
+                        otherOverlap[i] = 0;
+                        AABB combined;
+                        combined.center = loc+Vec3f{{0.5,0.5,0.5}};
+                        combined.center[i] = (dir > 0 ? otherLoc[i] : loc[i]);
+                        combined.size = {{1,1,1}};
+                        combined.size[i] = 2;
+                        Collision collision;
+                        entity.checkCollision(combined).extract(collision);
+                        overlap[i] = collision.overlap[i];
+                    }
+                }
+            }
+        }
+    }
+    Vec3f totalOverlap;
+    for(auto overlap:blockOverlaps) {
+        totalOverlap += overlap;
+    }
+    int minAxis = 0;
+    for(int i=1;i<3;++i) {
+        if(std::abs(totalOverlap[i]) < std::abs(totalOverlap[minAxis])) {
+            minAxis = i;
+        }
+    }
+    totalOverlap[(minAxis+1)%3] = totalOverlap[(minAxis+2)%3] = 0;
     if(collision) {
         return {{totalOverlap}};
     }
@@ -184,7 +233,7 @@ void World::setViewerLoc(Vec3f loc) {
         startZ = chunkZ-LOADED_REGION_WIDTH/2;
     for(int x = 0;x<LOADED_REGION_WIDTH;++x) {
         for(int z=0;z<LOADED_REGION_WIDTH;++z) {
-            _chunksToLoad.insert({{startX+x,startZ+z}});
+            _chunksToLoad.insert({{{startX+x,startZ+z}}});
         }
     }
 }
@@ -349,63 +398,63 @@ void World::_buildChunkVarr(int chunkX,int chunkZ,VertexArray& varr) const {
                     auto normal = Vec3f{{1,0,0}};
                     if(x > 0 && c.blocks[x-1][z][y].filled) {
                         auto color = c.blocks[x-1][z][y].color;
-                        varr.push_back({{fx,fy,  fz},
-                                        color,normal});
-                        varr.push_back({{fx,fy+1,fz},
-                                        color,normal});
-                        varr.push_back({{fx,fy+1,fz+1},
-                                        color,normal});
-                        varr.push_back({{fx,fy,  fz+1},
-                                        color,normal});
+                        varr.push_back({ {{fx,fy,  fz}},
+                                         color,normal    });
+                        varr.push_back({ {{fx,fy+1,fz}},
+                                         color,normal    });
+                        varr.push_back({ {{fx,fy+1,fz+1}},
+                                         color,normal    });
+                        varr.push_back({ {{fx,fy,  fz+1}},
+                                         color,normal    });
                     }
                     if(x < Chunk::WIDTH-1 && c.blocks[x+1][z][y].filled) {
                         auto color = c.blocks[x+1][z][y].color;
-                        varr.push_back({{fx+1,fy,  fz},
-                                        color,-normal});
-                        varr.push_back({{fx+1,fy,  fz+1},
-                                        color,-normal});
-                        varr.push_back({{fx+1,fy+1,fz+1},
-                                        color,-normal});
-                        varr.push_back({{fx+1,fy+1,fz},
-                                        color,-normal});
+                        varr.push_back({ {{fx+1,fy,  fz}},
+                                         color,-normal     });
+                        varr.push_back({ {{fx+1,fy,  fz+1}},
+                                         color,-normal     });
+                        varr.push_back({ {{fx+1,fy+1,fz+1}},
+                                         color,-normal     });
+                        varr.push_back({ {{fx+1,fy+1,fz}},
+                                         color,-normal     });
                     }
                 }
                 if(validX && validY) {
                     auto normal = Vec3f{{0,0,1}};
                     if(z > 0 && c.blocks[x][z-1][y].filled) {
                         auto color = c.blocks[x][z-1][y].color;
-                        varr.push_back({{fx,  fy,  fz},color,normal});
-                        varr.push_back({{fx+1,fy,  fz},color,normal});
-                        varr.push_back({{fx+1,fy+1,fz},color,normal});
-                        varr.push_back({{fx,  fy+1,fz},color,normal});
+                        varr.push_back({ {{fx,  fy,  fz}},color,normal});
+                        varr.push_back({ {{fx+1,fy,  fz}},color,normal});
+                        varr.push_back({ {{fx+1,fy+1,fz}},color,normal});
+                        varr.push_back({ {{fx,  fy+1,fz}},color,normal});
                     }
                     if(z < Chunk::WIDTH-1 && c.blocks[x][z+1][y].filled) {
                         auto color = c.blocks[x][z+1][y].color;
-                        varr.push_back({{fx,  fy,  fz+1},
-                                        color,-normal});
-                        varr.push_back({{fx,  fy+1,fz+1},
-                                        color,-normal});
-                        varr.push_back({{fx+1,fy+1,fz+1},
-                                        color,-normal});
-                        varr.push_back({{fx+1,fy,  fz+1},
-                                        color,-normal});
+                        varr.push_back({ {{fx,  fy,  fz+1}},
+                                         color,-normal     });
+                        varr.push_back({ {{fx,  fy+1,fz+1}},
+                                         color,-normal     });
+                        varr.push_back({ {{fx+1,fy+1,fz+1}},
+                                         color,-normal     });
+                        varr.push_back({ {{fx+1,fy,  fz+1}},
+                                         color,-normal     });
                     }
                 }
                 if(validX && validZ) {
                     auto normal = Vec3f{{0,1,0}};
                     if(y > 0 && c.blocks[x][z][y-1].filled) {
                         auto color = c.blocks[x][z][y-1].color;
-                        varr.push_back({{fx,  fy,fz},  color,normal});
-                        varr.push_back({{fx,  fy,fz+1},color,normal});
-                        varr.push_back({{fx+1,fy,fz+1},color,normal});
-                        varr.push_back({{fx+1,fy,fz},  color,normal});
+                        varr.push_back({ {{fx,  fy,fz}},  color,normal});
+                        varr.push_back({ {{fx,  fy,fz+1}},color,normal});
+                        varr.push_back({ {{fx+1,fy,fz+1}},color,normal});
+                        varr.push_back({ {{fx+1,fy,fz}},  color,normal});
                     }
                     if(y < Chunk::HEIGHT-1 && c.blocks[x][z][y+1].filled) {
                         auto color = c.blocks[x][z][y+1].color;
-                        varr.push_back({{fx,  fy+1,fz},  color,-normal});
-                        varr.push_back({{fx+1,fy+1,fz},  color,-normal});
-                        varr.push_back({{fx+1,fy+1,fz+1},color,-normal});
-                        varr.push_back({{fx,  fy+1,fz+1},color,-normal});
+                        varr.push_back({ {{fx,  fy+1,fz}},  color,-normal});
+                        varr.push_back({ {{fx+1,fy+1,fz}},  color,-normal});
+                        varr.push_back({ {{fx+1,fy+1,fz+1}},color,-normal});
+                        varr.push_back({ {{fx,  fy+1,fz+1}},color,-normal});
                     }
                 }
             }

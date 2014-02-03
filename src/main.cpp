@@ -11,7 +11,7 @@
 
 const float FPS = 50;
 const float DT  = 1.0/FPS;
-const float WORLD_RADIUS = 200;
+/*const float WORLD_RADIUS = 200;*/
 const float CAM_SPEED = 30;
 const float LOOK_SCALE = 1.0/10;
 const float CLICKS_PER_SECOND = 4;
@@ -103,35 +103,35 @@ int main() {
 
     VertexArray cube;
     {
-        cube.push_back({{{-0.004,-0.004,-0.004}},{{0,0,0}},{{0,0,-1}}});
-        cube.push_back({{{-0.004,1.004,-0.004}},{{0,0,0}},{{0,0,-1}}});
-        cube.push_back({{{1.004,1.004,-0.004}},{{0,0,0}},{{0,0,-1}}});
-        cube.push_back({{{1.004,-0.004,-0.004}},{{0,0,0}},{{0,0,-1}}});
+        cube.push_back({ {{-0.004,-0.004,-0.004}},{{0,0,0}},{{0,0,-1}} });
+        cube.push_back({ {{-0.004,1.004,-0.004}}, {{0,0,0}},{{0,0,-1}} });
+        cube.push_back({ {{1.004,1.004,-0.004}},  {{0,0,0}},{{0,0,-1}} });
+        cube.push_back({ {{1.004,-0.004,-0.004}}, {{0,0,0}},{{0,0,-1}} });
 
-        cube.push_back({{{-0.004,-0.004,1.004}},{{0,0,0}},{{0,0,1}}});
-        cube.push_back({{{1.004,-0.004,1.004}},{{0,0,0}},{{0,0,1}}});
-        cube.push_back({{{1.004,1.004,1.004}},{{0,0,0}},{{0,0,1}}});
-        cube.push_back({{{-0.004,1.004,1.004}},{{0,0,0}},{{0,0,1}}});
+        cube.push_back({ {{-0.004,-0.004,1.004}}, {{0,0,0}},{{0,0,1}}  });
+        cube.push_back({ {{1.004,-0.004,1.004}},  {{0,0,0}},{{0,0,1}}  });
+        cube.push_back({ {{1.004,1.004,1.004}},   {{0,0,0}},{{0,0,1}}  });
+        cube.push_back({ {{-0.004,1.004,1.004}},  {{0,0,0}},{{0,0,1}}  });
+ 
+        cube.push_back({ {{-0.004,-0.004,-0.004}},{{0,0,0}},{{-1,0,0}} });
+        cube.push_back({ {{-0.004,-0.004,1.004}}, {{0,0,0}},{{-1,0,0}} });
+        cube.push_back({ {{-0.004,1.004,1.004}},  {{0,0,0}},{{-1,0,0}} });
+        cube.push_back({ {{-0.004,1.004,-0.004}}, {{0,0,0}},{{-1,0,0}} });
 
-        cube.push_back({{{-0.004,-0.004,-0.004}},{{0,0,0}},{{-1,0,0}}});
-        cube.push_back({{{-0.004,-0.004,1.004}},{{0,0,0}},{{-1,0,0}}});
-        cube.push_back({{{-0.004,1.004,1.004}},{{0,0,0}},{{-1,0,0}}});
-        cube.push_back({{{-0.004,1.004,-0.004}},{{0,0,0}},{{-1,0,0}}});
+        cube.push_back({ {{1.004,-0.004,-0.004}}, {{0,0,0}},{{1,0,0}}  });
+        cube.push_back({ {{1.004,1.004,-0.004}},  {{0,0,0}},{{1,0,0}}  });
+        cube.push_back({ {{1.004,1.004,1.004}},   {{0,0,0}},{{1,0,0}}  });
+        cube.push_back({ {{1.004,-0.004,1.004}},  {{0,0,0}},{{1,0,0}}  });
 
-        cube.push_back({{{1.004,-0.004,-0.004}},{{0,0,0}},{{1,0,0}}});
-        cube.push_back({{{1.004,1.004,-0.004}},{{0,0,0}},{{1,-0.004,0}}});
-        cube.push_back({{{1.004,1.004,1.004}},{{0,0,0}},{{1,0,0}}});
-        cube.push_back({{{1.004,-0.004,1.004}},{{0,0,0}},{{1,0,0}}});
+        cube.push_back({ {{-0.004,-0.004,-0.004}},{{0,0,0}},{{0,-1,0}} });
+        cube.push_back({ {{1.004,-0.004,-0.004}}, {{0,0,0}},{{0,-1,0}} });
+        cube.push_back({ {{1.004,-0.004,1.004}},  {{0,0,0}},{{0,-1,0}} });
+        cube.push_back({ {{-0.004,-0.004,1.004}}, {{0,0,0}},{{0,-1,0}} });
 
-        cube.push_back({{{-0.004,-0.004,-0.004}},{{0,0,0}},{{0,-1,0}}});
-        cube.push_back({{{1.004,-0.004,-0.004}},{{0,0,0}},{{0,-1,0}}});
-        cube.push_back({{{1.004,-0.004,1.004}},{{0,0,0}},{{0,-1,0}}});
-        cube.push_back({{{-0.004,-0.004,1.004}},{{0,0,0}},{{0,-1,0}}});
-
-        cube.push_back({{{-0.004,1.004,-0.004}},{{0,0,0}},{{0,1,0}}});
-        cube.push_back({{{-0.004,1.004,1.004}},{{0,0,0}},{{0,1,0}}});
-        cube.push_back({{{1.004,1.004,1.004}},{{0,0,0}},{{-0.004,1,0}}});
-        cube.push_back({{{1.004,1.004,-0.004}},{{0,0,0}},{{-0.004,1,0}}});
+        cube.push_back({ {{-0.004,1.004,-0.004}}, {{0,0,0}},{{0,1,0}}  });
+        cube.push_back({ {{-0.004,1.004,1.004}},  {{0,0,0}},{{0,1,0}}  });
+        cube.push_back({ {{1.004,1.004,1.004}},   {{0,0,0}},{{0,1,0}}  });
+        cube.push_back({ {{1.004,1.004,-0.004}},  {{0,0,0}},{{0,1,0}}  });
     }
 
     camera.loc = Vec3f{{8,40,8}};
@@ -203,18 +203,21 @@ int main() {
                    {{0.6,2,0.6}}};
         auto collision = world.checkCollision(camBB);
         if(collision) {
-            auto offset = collision.get().overlap;
-            auto maxMag = MAX_RESOLUTION_SPEED*DT;
-            if(offset.magSquared() > maxMag*maxMag) {
-                offset = maxMag*norm(offset);
-            }
-            camera.loc += offset;
+            collision.forward([=,&camera](Collision c) {
+                auto offset = c.overlap;
+                auto maxMag = MAX_RESOLUTION_SPEED*DT;
+                if(offset.magSquared() > maxMag*maxMag) {
+                    offset = maxMag*norm(offset);
+                }
+                camera.loc += offset;
+            });
         } else {
             auto translation = camera.relativeTranslation(cameraDiff*CAM_SPEED*DT);
             do {
                 camBB.center = camera.loc+translation+Vec3f{{0,-0.5,0}};
                 collision = world.checkCollision(camBB);
-                if(collision) {
+                Collision c;
+                if(collision.extract(c)) {
                     float maxInd = 0;
                     for(int i=1;i<3;++i) {
                         if(std::abs(translation[i]) 
@@ -222,7 +225,7 @@ int main() {
                             maxInd = i;
                         }
                     }
-                    auto overlap = collision.get().overlap;
+                    auto overlap = c.overlap;
                     bool found = false;
                     for(int i=0;i<3;++i) {
                         if(translation[i] != 0 && overlap[i] != 0 &&
@@ -247,20 +250,20 @@ int main() {
 
         if(mouseCaptured) {
             sf::Vector2i mouseLoc2i = sf::Mouse::getPosition(window);
-            Vec2i mouseCenter = { windowWidth/2,
-                                  windowHeight/2 };
-            Vec2i mouseLoc = { mouseLoc2i.x,
-                               windowHeight-1-mouseLoc2i.y };
+            Vec2i mouseCenter = {{ windowWidth /2,
+                                   windowHeight/2 }};
+            Vec2i mouseLoc = {{ mouseLoc2i.x,
+                                windowHeight-1-mouseLoc2i.y }};
             mouseLoc -= mouseCenter;
             camera.heading += mouseLoc[0]*LOOK_SCALE;
             camera.pitch   += mouseLoc[1]*LOOK_SCALE;
             camera.constrain();
 
             sf::Mouse::setPosition(windowCenter,window);
-            if(blockSelection) {
+            blockSelection.forward([=,&world,&leftMouse,&rightMouse]
+                                    (World::BlockSelection selected) {
                 bool left  = leftMouse.next(sf::Mouse::isButtonPressed(sf::Mouse::Left),DT),
                      right = rightMouse.next(sf::Mouse::isButtonPressed(sf::Mouse::Right),DT);
-                auto selected = blockSelection.get();
                 if(left) {
                     auto block = selected.block;
                     world.deleteBlock(block[0],
@@ -279,7 +282,7 @@ int main() {
                                        placeLoc[2],{{1,1,1}});
                     }
                 }
-            }
+            });
         } else {
             leftMouse.next(false,DT);
             rightMouse.next(false,DT);
@@ -299,8 +302,8 @@ int main() {
         {
             world.draw(viewDir);
 
-            if(blockSelection) {
-                auto block = blockSelection.get().block;
+            blockSelection.forward([cube](World::BlockSelection selection) {
+                auto block = selection.block;
                 glTranslatef(block[0],
                              block[1],
                              block[2]);
@@ -309,7 +312,7 @@ int main() {
                 drawVertArray(GL_QUADS,cube);
 
                 glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-            }
+            });
         }
         camera.end();
 
