@@ -2,17 +2,21 @@
 #include <SFML/OpenGL.hpp>
 #include "Camera.hpp"
 #include "World.hpp"
+#include "NumUtil.hpp"
 
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
-const float FPS = 60;
+const float FPS = 50;
 const float DT  = 1.0/FPS;
 const float WORLD_RADIUS = 200;
 const float CAM_SPEED = 30;
+const float LOOK_SCALE = 1.0/10;
 const float CLICKS_PER_SECOND = 4;
 const float MAX_RESOLUTION_SPEED = 10;
+const std::string TITLE = "JackOfClubs Test";
 
 void initViewport(int width,int height,Camera& camera) {
     glViewport(0,0,width,height);
@@ -24,12 +28,12 @@ void initViewport(int width,int height,Camera& camera) {
 void initGL() {
     glClearColor(0,0.4,0.99,0);
     glClearDepth(1);
-    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
 
     glEnable(GL_COLOR_MATERIAL);
-    glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
+    glColorMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT1);
 
@@ -67,8 +71,19 @@ public:
 };
 
 int main() {
+    std::cout << "DT: " << DT << std::endl;
     sf::Window window(sf::VideoMode(640,480),
-                      "JackOfClubs test");
+                      "JackOfClubs test",
+                      sf::Style::Default,
+                      sf::ContextSettings(32));
+    {
+        auto settings = window.getSettings();
+        std::cout << "Depth bits:    " << settings.depthBits         << "\n"
+                  << "Stencil bits:  " << settings.stencilBits       << "\n"
+                  << "AA Level:      " << settings.antialiasingLevel << "\n"
+                  << "Major version: " << settings.majorVersion      << "\n"
+                  << "Minor version: " << settings.minorVersion      << "\n";
+    }
     bool mouseCaptured = false;
     sf::Vector2u windowSize = window.getSize();
     sf::Vector2i windowCenter(windowSize.x/2,
@@ -122,8 +137,12 @@ int main() {
     camera.loc = Vec3f{{8,40,8}};
     camera.heading = 180;
     camera.pitch = -30;
+    
+    sf::Clock frameTime;
 
     while(window.isOpen()) {
+        frameTime.restart();
+
         sf::Event e;
         while(window.pollEvent(e)) {
             switch(e.type) {
@@ -181,7 +200,7 @@ int main() {
         }
         
         AABB camBB{camera.loc+Vec3f{{0,-0.5,0}},
-                   {{0.8,1,0.8}}};
+                   {{0.6,2,0.6}}};
         auto collision = world.checkCollision(camBB);
         if(collision) {
             auto offset = collision.get().overlap;
@@ -196,11 +215,23 @@ int main() {
                 camBB.center = camera.loc+translation+Vec3f{{0,-0.5,0}};
                 collision = world.checkCollision(camBB);
                 if(collision) {
+                    float maxInd = 0;
+                    for(int i=1;i<3;++i) {
+                        if(std::abs(translation[i]) 
+                           > std::abs(translation[maxInd])) {
+                            maxInd = i;
+                        }
+                    }
                     auto overlap = collision.get().overlap;
                     bool found = false;
                     for(int i=0;i<3;++i) {
-                        if(translation[i] != 0 && overlap[i] != 0) {
-                            translation[i] = 0;
+                        if(translation[i] != 0 && overlap[i] != 0 &&
+                           signum(translation[i]) != signum(overlap[i])) {
+                            if(i == maxInd) {
+                                translation[maxInd] += overlap[i];
+                            } else {
+                                translation[i] = 0;
+                            }
                             found = true;
                             break;
                         }
@@ -221,8 +252,8 @@ int main() {
             Vec2i mouseLoc = { mouseLoc2i.x,
                                windowHeight-1-mouseLoc2i.y };
             mouseLoc -= mouseCenter;
-            camera.heading += mouseLoc[0]/40.0;
-            camera.pitch   += mouseLoc[1]/40.0;
+            camera.heading += mouseLoc[0]*LOOK_SCALE;
+            camera.pitch   += mouseLoc[1]*LOOK_SCALE;
             camera.constrain();
 
             sf::Mouse::setPosition(windowCenter,window);
@@ -256,7 +287,7 @@ int main() {
         
         auto viewDir = camera.viewDirection();
 
-        //std::cout << camera.loc << "\t" << viewDir << std::endl;
+        /*std::cout << camera.loc << "\t" << viewDir << std::endl;*/
 
         world.setViewerLoc(camera.loc);
         world.update(DT);
@@ -300,6 +331,17 @@ int main() {
         glPopMatrix();
 
         glMatrixMode(GL_MODELVIEW);
+
+        auto timeForFrame = frameTime.getElapsedTime();
+        float currFPS = 1.0/timeForFrame.asSeconds();
+        if(timeForFrame.asSeconds() < DT) {
+            sf::sleep(sf::seconds(DT)-timeForFrame);
+            currFPS = FPS;
+        }
+        std::stringstream newTitle(TITLE);
+        newTitle << ": " << (int)(currFPS+0.5)
+                 << " FPS, " << timeForFrame.asMilliseconds() << " ms/frame";
+        window.setTitle(newTitle.str());
 
         window.display();
     }

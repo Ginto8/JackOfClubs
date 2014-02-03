@@ -5,7 +5,7 @@ project(JackOfClubs)
 if(CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
 endif()
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall ${CMAKE_CXX_FLAGS}")
 # (you can also set it on the command line: -D CMAKE_BUILD_TYPE=Release)
 
 # Set version information in a config.h file
@@ -44,6 +44,7 @@ target_link_libraries(
     ${EXECUTABLE_NAME}
     GL
     GLU
+    GLEW
 )
 
 # Install target
