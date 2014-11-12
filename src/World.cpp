@@ -132,7 +132,7 @@ Maybe<World::BlockSelection> World::selectedBlock(Vec3f viewDir,
 }
 
 Maybe<Collision> World::checkCollision(const AABB& entity) const {
-    std::cout << entity.center << "\t" << entity.size << std::endl;
+    /* std::cout << entity.center << "\t" << entity.size << std::endl; */
     Vec3i minBlock,maxBlock;
     for(int i=0;i<3;++i) {
         int blocks[] = { (int)std::ceil(entity.center[i]+entity.size[i]/2),
@@ -145,7 +145,7 @@ Maybe<Collision> World::checkCollision(const AABB& entity) const {
             maxBlock[i] = blocks[0];
         }
     }
-    std::cout << minBlock << "\t" << maxBlock << std::endl;
+    /* std::cout << minBlock << "\t" << maxBlock << std::endl; */
 
     std::vector<Vec3f> blockOverlaps;
     Vec3i regionSize = maxBlock-minBlock+Vec3i{{1,1,1}};
@@ -266,6 +266,7 @@ void World::draw(Vec3f viewDir) const {
             glTranslatef(chunk.loc[0],chunk.loc[1],chunk.loc[2]);
             drawVertArray(GL_QUADS,chunk.varr);
             glPopMatrix();
+            /* std::cout << chunk.varr.size() << std::endl; */
         }
     }
 }

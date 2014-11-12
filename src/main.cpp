@@ -9,8 +9,9 @@
 #include <algorithm>
 #include <sstream>
 
-const float FPS = 50;
+const float FPS = 60;
 const float DT  = 1.0/FPS;
+const sf::Time TIME_PER_FRAME = sf::seconds(DT);
 /*const float WORLD_RADIUS = 200;*/
 const float CAM_SPEED = 30;
 const float LOOK_SCALE = 1.0/10;
@@ -253,7 +254,7 @@ int main() {
             Vec2i mouseCenter = {{ windowWidth /2,
                                    windowHeight/2 }};
             Vec2i mouseLoc = {{ mouseLoc2i.x,
-                                windowHeight-1-mouseLoc2i.y }};
+                                windowHeight-mouseLoc2i.y }};
             mouseLoc -= mouseCenter;
             camera.heading += mouseLoc[0]*LOOK_SCALE;
             camera.pitch   += mouseLoc[1]*LOOK_SCALE;
@@ -343,7 +344,8 @@ int main() {
         }
         std::stringstream newTitle(TITLE);
         newTitle << ": " << (int)(currFPS+0.5)
-                 << " FPS, " << timeForFrame.asMilliseconds() << " ms/frame";
+                 << " FPS, " << timeForFrame.asMilliseconds() << "/"
+                 << TIME_PER_FRAME.asMilliseconds() << " ms/frame";
         window.setTitle(newTitle.str());
 
         window.display();
