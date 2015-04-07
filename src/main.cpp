@@ -1,5 +1,6 @@
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
+#include "Color.hpp"
 #include "Camera.hpp"
 #include "World.hpp"
 #include "NumUtil.hpp"
@@ -27,7 +28,7 @@ void initViewport(int width,int height,Camera& camera) {
 }
 
 void initGL() {
-    glClearColor(0,0.4,0.99,0);
+    glClearColor(0x37/255.0,0x87/255.0,0xcd/255.0,0);
     glClearDepth(1);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
@@ -93,6 +94,13 @@ int main() {
         windowHeight = windowSize.y;
     World world;
     Camera camera;
+    Color3f colors[] = {
+        WHITE,{{0.3,0.3,0.3}},
+        World::DIRTCOLOR,RED,
+        hsvToRgb({{1.0/3,0.75,0.75}}),hsvToRgb({{2.0/3,0.75,0.75}})
+    };
+    constexpr size_t numColors = sizeof(colors)/sizeof(colors[0]);
+    int blockColor = 0;
 
     Maybe<World::BlockSelection> blockSelection;
 
@@ -113,7 +121,7 @@ int main() {
         cube.push_back({ {{1.004,-0.004,1.004}},  {{0,0,0}},{{0,0,1}}  });
         cube.push_back({ {{1.004,1.004,1.004}},   {{0,0,0}},{{0,0,1}}  });
         cube.push_back({ {{-0.004,1.004,1.004}},  {{0,0,0}},{{0,0,1}}  });
- 
+
         cube.push_back({ {{-0.004,-0.004,-0.004}},{{0,0,0}},{{-1,0,0}} });
         cube.push_back({ {{-0.004,-0.004,1.004}}, {{0,0,0}},{{-1,0,0}} });
         cube.push_back({ {{-0.004,1.004,1.004}},  {{0,0,0}},{{-1,0,0}} });
@@ -138,7 +146,7 @@ int main() {
     camera.loc = Vec3f{{8,40,8}};
     camera.heading = 180;
     camera.pitch = -30;
-    
+
     sf::Clock frameTime;
 
     while(window.isOpen()) {
@@ -172,13 +180,20 @@ int main() {
                 window.setMouseCursorVisible(!mouseCaptured);
                 break;
             case sf::Event::MouseButtonPressed:
+                break;
+            case sf::Event::MouseWheelMoved:
+                blockColor += e.mouseWheel.delta;
+                blockColor %= (int)numColors;
+                if(blockColor < 0)
+                    blockColor += numColors;
+                break;
             default:
                 break;
             }
         }
 
         Vec3f cameraDiff{{0,0,0}};
-        
+
         if(mouseCaptured) {
             if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
                 cameraDiff[2] += -1;
@@ -199,7 +214,7 @@ int main() {
                 cameraDiff[1] += 1;
             }
         }
-        
+
         AABB camBB{camera.loc+Vec3f{{0,-0.5,0}},
                    {{0.6,2,0.6}}};
         auto collision = world.checkCollision(camBB);
@@ -221,7 +236,7 @@ int main() {
                 if(collision.extract(c)) {
                     float maxInd = 0;
                     for(int i=1;i<3;++i) {
-                        if(std::abs(translation[i]) 
+                        if(std::abs(translation[i])
                            > std::abs(translation[maxInd])) {
                             maxInd = i;
                         }
@@ -280,7 +295,7 @@ int main() {
                                        placeLoc[2]).filled) {
                         world.setBlock(placeLoc[0],
                                        placeLoc[1],
-                                       placeLoc[2],{{1,1,1}});
+                                       placeLoc[2],colors[blockColor]);
                     }
                 }
             });
@@ -288,7 +303,7 @@ int main() {
             leftMouse.next(false,DT);
             rightMouse.next(false,DT);
         }
-        
+
         auto viewDir = camera.viewDirection();
 
         /*std::cout << camera.loc << "\t" << viewDir << std::endl;*/
@@ -296,8 +311,40 @@ int main() {
         world.setViewerLoc(camera.loc);
         world.update(DT);
         blockSelection = world.selectedBlock(viewDir);
-        
+
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+        // preview color
+        glMatrixMode(GL_PROJECTION);
+
+        glPushMatrix();
+
+            glOrtho(windowWidth,0,0,windowHeight,1,-1);
+
+            glMatrixMode(GL_MODELVIEW);
+
+            constexpr int PREVIEW_SIZE = 20;
+            auto color = colors[blockColor];
+            glColor3f(color[0],color[1],color[2]);
+            glBegin(GL_QUADS);
+                glVertex2f(0,0);
+                glVertex2f(0,PREVIEW_SIZE);
+                glVertex2f(PREVIEW_SIZE,PREVIEW_SIZE);
+                glVertex2f(PREVIEW_SIZE,0);
+            glEnd();
+            glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+            glColor3f(1,1,1);
+            glBegin(GL_QUADS);
+                glVertex2f(0,0);
+                glVertex2f(0,PREVIEW_SIZE);
+                glVertex2f(PREVIEW_SIZE,PREVIEW_SIZE);
+                glVertex2f(PREVIEW_SIZE,0);
+            glEnd();
+            glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+
+            glMatrixMode(GL_PROJECTION);
+
+        glPopMatrix();
 
         camera.begin();
         {
@@ -309,7 +356,7 @@ int main() {
                              block[1],
                              block[2]);
                 glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-                
+
                 drawVertArray(GL_QUADS,cube);
 
                 glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);

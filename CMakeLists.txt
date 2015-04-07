@@ -27,6 +27,7 @@ set(EXECUTABLE_NAME "JackOfClubs")
 add_executable(${EXECUTABLE_NAME}
     src/main.cpp
     src/Camera.cpp
+    src/Color.cpp
     src/Vertex.cpp
     src/World.cpp
     src/Perlin.cpp
